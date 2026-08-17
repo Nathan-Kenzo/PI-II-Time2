@@ -1,9 +1,9 @@
 # PI-II-Time2
-# [Nome do Projeto/Time]
+# [Time-II]
 
 ## Sobre o Projeto
 
-Repositório do grupo **[Nome do Time]** para o desenvolvimento do projeto da disciplina **Projeto Integrador II**.
+Repositório do grupo 2 para o desenvolvimento do projeto da disciplina **Projeto Integrador II**.
 
 > Breve descrição do projeto (a ser definida nas próximas etapas).
 
@@ -19,7 +19,7 @@ Repositório do grupo **[Nome do Time]** para o desenvolvimento do projeto da di
 
 ## Informações Acadêmicas
 
-- **Curso:** [Nome do Curso]
+- **Curso:** [Engenharia de Software]
 - **Componente Curricular:** Projeto Integrador II
 - **Semestre/Ano:** 2º Semestre / 2026
 - **Professora Orientadora:** [Renata Arantes](https://github.com/RenataArantes)
