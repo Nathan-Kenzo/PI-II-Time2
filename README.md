@@ -15,7 +15,7 @@ Repositório do grupo 2 para o desenvolvimento do projeto da disciplina **Projet
 | Felipe Oliveira Barbosa | [@usuario2](https://github.com/tiez0) |
 | Pedro Tiezo Sales Shimizu | [@usuario3](https://github.com/henriquepella) |
 | Henrique Aguiar de Souza Pella | [@usuario4](https://github.com/usuario4) |
-| Felipe Oliveira dos Santos | [@usuario4](https://github.com/usuario4) |
+| Felipe Oliveira dos Santos | [Felipe Santos](https://github.com/FelipeOS6) |
 
 ## Informações Acadêmicas
 
