@@ -12,7 +12,7 @@ Repositório do grupo 2 para o desenvolvimento do projeto da disciplina **Projet
 | Nome Completo | GitHub |
 |---|---|
 | Nathan Kenzo Puzipe | [Nathan-Kenzo](https://github.com/Nathan-Kenzo)) |
-| Felipe Oliveira Barbosa | [@usuario2](https://github.com/usuario2) |
+| Felipe Oliveira Barbosa | [@usuario2](https://github.com/tiez0) |
 | Pedro Tiezo Sales Shimizu | [@usuario3](https://github.com/henriquepella) |
 | Henrique Aguiar de Souza Pella | [@usuario4](https://github.com/usuario4) |
 | Felipe Oliveira dos Santos | [@usuario4](https://github.com/usuario4) |
