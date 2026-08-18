@@ -1,0 +1,27 @@
+# IDEs e editores
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Sistema operacional
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Dependências
+node_modules/
+venv/
+.venv/
+
+# Build e artefatos
+dist/
+build/
+target/
+out/
+*.class
+*.log
+
+# Variáveis de ambiente
+.env
+.env.local
