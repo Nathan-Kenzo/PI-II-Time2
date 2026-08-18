@@ -11,10 +11,10 @@ Repositório do grupo 2 para o desenvolvimento do projeto da disciplina **Projet
 
 | Nome Completo | GitHub |
 |---|---|
-| Nathan Kenzo Puzipe | [Nathan-Kenzo](https://github.com/Nathan-Kenzo)) |
-| Felipe Oliveira Barbosa | [@usuario2](https://github.com/tiez0) |
-| Pedro Tiezo Sales Shimizu | [@usuario3](https://github.com/henriquepella) |
-| Henrique Aguiar de Souza Pella | [@usuario4](https://github.com/usuario4) |
+| Nathan Kenzo Puzipe | [Nathan-Kenzo](https://github.com/Nathan-Kenzo) |
+| Felipe Oliveira Barbosa | [@usuario2](https://github.com/usuario2) |
+| Pedro Tiezo Sales Shimizu | [Tiez0](https://github.com/Tiez0) |
+| Henrique Aguiar de Souza Pella | [henriquepella](https://github.com/henriquepella) |
 | Felipe Oliveira dos Santos | [Felipe Santos](https://github.com/FelipeOS6) |
 
 ## Informações Acadêmicas
