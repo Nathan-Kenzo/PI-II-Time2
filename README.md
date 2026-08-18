@@ -1,6 +1,8 @@
-<p align="center">
-  <img src="docs/logo.png" alt="PUC-Campinas" width="130">
-</p>
+<div align="center">
+
+![PUC-Campinas](docs/logo-puc.png)
+
+</div>
 
 <h1 align="center">PI-II-Time2</h1>
 
@@ -266,9 +268,11 @@ O projeto utiliza **Conventional Commits** no formato `tipo: descrição`:
 | `chore` | Configurações e manutenção |
 | `revert` | Reversão de um commit anterior |
 
-<p align="center">
-  <img src="docs/img.png" alt="Exemplos de Conventional Commits" width="600">
-</p>
+<div align="center">
+
+![Exemplos de Conventional Commits](docs/img.png)
+
+</div>
 
 ### Autoria dos Artefatos
 
