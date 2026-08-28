@@ -1,0 +1,346 @@
+:root {
+  --cor-fundo: #f5f6f8;
+  --cor-superficie: #ffffff;
+  --cor-borda: #e2e5ea;
+
+  --cor-texto: #1f2937;
+  --cor-texto-suave: #6b7280;
+
+  --cor-header: #1f2a44;
+  --cor-primaria: #2d6cdf;
+  --cor-primaria-escura: #2456b3;
+
+  /* cores de status da demanda */
+  --status-aberta: #64748b;
+  --status-andamento: #2d6cdf;
+  --status-revisao: #d9a404;
+  --status-concluida: #16a34a;
+  --status-cancelada: #dc2626;
+
+  /* cores de prioridade */
+  --prioridade-critica: #dc2626;
+  --prioridade-alta: #ea580c;
+  --prioridade-media: #d9a404;
+  --prioridade-baixa: #16a34a;
+
+  --raio-borda: 8px;
+  --sombra-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+}
+
+.cabecalho {
+  background-color: var(--cor-header);
+  color: #ffffff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.cabecalho .logo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cabecalho .logo span {
+  color: var(--cor-primaria);
+}
+
+.menu {
+  display: flex;
+  gap: 8px;
+}
+
+.menu a {
+  padding: 8px 14px;
+  border-radius: var(--raio-borda);
+  font-size: 0.9rem;
+  color: #cbd3e1;
+}
+
+.menu a:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.menu a.ativo {
+  background-color: var(--cor-primaria);
+  color: #ffffff;
+}
+
+.usuario-logado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--cor-primaria);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* ---------- Área principal ---------- */
+.conteudo {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.titulo-pagina {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+.subtitulo-pagina {
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  box-shadow: var(--sombra-card);
+  padding: 18px 20px;
+}
+
+.botao {
+  display: inline-block;
+  padding: 9px 16px;
+  border-radius: var(--raio-borda);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botao-primario {
+  background-color: var(--cor-primaria);
+  color: #ffffff;
+}
+
+.botao-primario:hover {
+  background-color: var(--cor-primaria-escura);
+}
+
+.botao-secundario {
+  background-color: var(--cor-superficie);
+  color: var(--cor-texto);
+  border-color: var(--cor-borda);
+}
+
+.botao-secundario:hover {
+  background-color: var(--cor-fundo);
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+th {
+  color: var(--cor-texto-suave);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tbody tr:hover {
+  background-color: var(--cor-fundo);
+}
+
+.tabela-vazia {
+  text-align: center;
+  color: var(--cor-texto-suave);
+  padding: 24px 12px;
+}
+
+.tabela-vazia:hover {
+  background-color: transparent;
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.selo-aberta { background-color: var(--status-aberta); }
+.selo-andamento { background-color: var(--status-andamento); }
+.selo-revisao { background-color: var(--status-revisao); }
+.selo-concluida { background-color: var(--status-concluida); }
+.selo-cancelada { background-color: var(--status-cancelada); }
+
+.selo-critica { background-color: var(--prioridade-critica); }
+.selo-alta { background-color: var(--prioridade-alta); }
+.selo-media { background-color: var(--prioridade-media); }
+.selo-baixa { background-color: var(--prioridade-baixa); }
+
+.grade-resumo {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card-metrica {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metrica-numero {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.metrica-legenda {
+  font-size: 0.82rem;
+  color: var(--cor-texto-suave);
+}
+
+
+.grade-duas-colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.titulo-card {
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+
+.barra-item {
+  display: grid;
+  grid-template-columns: 100px 1fr 32px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.barra-item:last-child {
+  margin-bottom: 0;
+}
+
+.barra-rotulo {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.barra-fundo {
+  background-color: var(--cor-fundo);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.barra-preenchida {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.barra-valor {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+
+@media (max-width: 900px) {
+  .grade-resumo {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grade-duas-colunas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .grade-resumo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+.campo {
+  margin-bottom: 16px;
+}
+
+.campo label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--cor-primaria);
+}
