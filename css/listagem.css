@@ -6,8 +6,6 @@ body {
 }
 
 
-/* ===== Cabeçalho / menu ===== */
-
 #cabecalho {
     display: flex;
     justify-content: space-between;
@@ -47,8 +45,6 @@ body {
 }
 
 
-/* ===== Conteúdo da página ===== */
-
 .conteudo {
     width: 1160px;
     margin: 30px auto;
@@ -65,8 +61,6 @@ h1 {
     margin-top: 0;
 }
 
-
-/* ===== Caixa de filtros ===== */
 
 .caixa-filtros {
     display: flex;
@@ -119,8 +113,6 @@ h1 {
 }
 
 
-/* ===== Caixa e tabela de demandas ===== */
-
 .caixa-tabela {
     background-color: white;
     border: 1px solid #e5e7eb;
@@ -155,8 +147,6 @@ h1 {
     text-decoration: none;
 }
 
-
-/* ===== Etiquetas de prioridade e status ===== */
 
 .etiqueta {
     display: inline-block;
