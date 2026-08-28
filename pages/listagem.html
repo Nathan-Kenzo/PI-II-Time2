@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DemandaTrack - Demandas</title>
+
+    <link rel="stylesheet" href="../css/listagem.css">
+
+</head>
+
+<body>
+
+    <div id="cabecalho">
+
+        <div class="logo">
+            Demanda<strong class="logo-destaque">Track</strong>
+        </div>
+
+        <div class="menu">
+            <a href="login.html" class="item-menu">Login</a>
+            <a href="dashboard.html" class="item-menu">Dashboard</a>
+            <div class="item-menu item-menu-ativo">Demandas</div>
+            <div class="item-menu">Nova Demanda</div>
+        </div>
+
+    </div>
+
+
+    <div class="conteudo">
+
+        <h1>Demandas</h1>
+
+        <p class="subtitulo">
+            Lista de todas as demandas cadastradas no sistema
+        </p>
+
+
+        <div class="caixa-filtros">
+
+            <div class="campo-filtro">
+                <p class="rotulo">Buscar</p>
+                <div class="campo-simulado">
+                    <p class="placeholder">Título ou descrição</p>
+                </div>
+            </div>
+
+            <div class="campo-filtro">
+                <p class="rotulo">Status</p>
+                <div class="campo-simulado">
+                    <p class="placeholder">Todos</p>
+                </div>
+            </div>
+
+            <div class="campo-filtro">
+                <p class="rotulo">Prioridade</p>
+                <div class="campo-simulado">
+                    <p class="placeholder">Todas</p>
+                </div>
+            </div>
+
+            <div class="campo-filtro">
+                <p class="rotulo">Tipo</p>
+                <div class="campo-simulado">
+                    <p class="placeholder">Todos</p>
+                </div>
+            </div>
+
+            <div class="campo-filtro">
+                <p class="rotulo">Responsável</p>
+                <div class="campo-simulado">
+                    <p class="placeholder">Todos</p>
+                </div>
+            </div>
+
+            <div class="botao-filtrar">
+                <strong>Filtrar</strong>
+            </div>
+
+        </div>
+
+
+        <div class="caixa-tabela">
+
+            <div class="linha linha-cabecalho">
+                <div class="celula celula-titulo">Título</div>
+                <div class="celula">Tipo</div>
+                <div class="celula">Prioridade</div>
+                <div class="celula">Status</div>
+                <div class="celula">Projeto</div>
+                <div class="celula">Responsável</div>
+                <div class="celula">Criação</div>
+                <div class="celula">Prazo</div>
+                <div class="celula celula-acao"></div>
+            </div>
+
+            <div class="linha">
+                <div class="celula celula-titulo">Corrigir erro no login</div>
+                <div class="celula">Defeito</div>
+                <div class="celula"><div class="etiqueta etiqueta-critica">Crítica</div></div>
+                <div class="celula"><div class="etiqueta etiqueta-aberta">Aberta</div></div>
+                <div class="celula">DemandaTrack</div>
+                <div class="celula">Exemplo</div>
+                <div class="celula">20/08/2026</div>
+                <div class="celula">29/08/2026</div>
+                <div class="celula celula-acao"><div class="link-detalhes">Ver detalhes</div></div>
+            </div>
+
+            <div class="linha">
+                <div class="celula celula-titulo">Criar tela de dashboard</div>
+                <div class="celula">Tarefa</div>
+                <div class="celula"><div class="etiqueta etiqueta-alta">Alta</div></div>
+                <div class="celula"><div class="etiqueta etiqueta-andamento">Em andamento</div></div>
+                <div class="celula">DemandaTrack</div>
+                <div class="celula">Exemplo</div>
+                <div class="celula">21/08/2026</div>
+                <div class="celula">02/09/2026</div>
+                <div class="celula celula-acao"><div class="link-detalhes">Ver detalhes</div></div>
+            </div>
+
+            <div class="linha">
+                <div class="celula celula-titulo">Documentar rotas da API</div>
+                <div class="celula">Documentação</div>
+                <div class="celula"><div class="etiqueta etiqueta-media">Média</div></div>
+                <div class="celula"><div class="etiqueta etiqueta-revisao">Em revisão</div></div>
+                <div class="celula">DemandaTrack</div>
+                <div class="celula">Exemplo</div>
+                <div class="celula">22/08/2026</div>
+                <div class="celula">05/09/2026</div>
+                <div class="celula celula-acao"><div class="link-detalhes">Ver detalhes</div></div>
+            </div>
+
+            <div class="linha">
+                <div class="celula celula-titulo">Ajustar espaçamento do menu</div>
+                <div class="celula">Melhoria</div>
+                <div class="celula"><div class="etiqueta etiqueta-baixa">Baixa</div></div>
+                <div class="celula"><div class="etiqueta etiqueta-concluida">Concluída</div></div>
+                <div class="celula">DemandaTrack</div>
+                <div class="celula">Exemplo</div>
+                <div class="celula">18/08/2026</div>
+                <div class="celula">25/08/2026</div>
+                <div class="celula celula-acao"><div class="link-detalhes">Ver detalhes</div></div>
+            </div>
+
+            <div class="linha">
+                <div class="celula celula-titulo">Cadastro duplicado de usuário</div>
+                <div class="celula">Defeito</div>
+                <div class="celula"><div class="etiqueta etiqueta-alta">Alta</div></div>
+                <div class="celula"><div class="etiqueta etiqueta-cancelada">Cancelada</div></div>
+                <div class="celula">DemandaTrack</div>
+                <div class="celula">Exemplo</div>
+                <div class="celula">15/08/2026</div>
+                <div class="celula">-</div>
+                <div class="celula celula-acao"><div class="link-detalhes">Ver detalhes</div></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
