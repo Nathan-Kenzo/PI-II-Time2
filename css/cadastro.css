@@ -72,3 +72,18 @@ h1 {
     width: 100%;
     cursor: pointer;
 }
+
+#formulario .link-ajuda {
+    margin: 6px 0;
+    font-size: 13px;
+}
+
+#formulario .link-ajuda a {
+    color: #5b6b8c;
+    text-decoration: none;
+}
+
+#formulario .link-ajuda a:hover {
+    color: #3478db;
+    text-decoration: underline;
+}
