@@ -177,18 +177,18 @@ h1 {
 }
 
 .etiqueta-aberta {
-    background-color: #e8f0fd;
-    color: #3b76c2;
+    background-color: #eef0f2;
+    color: #64748b;
 }
 
 .etiqueta-andamento {
-    background-color: #fef3e0;
-    color: #e08e0b;
+    background-color: #e8f0fd;
+    color: #2d6cdf;
 }
 
 .etiqueta-revisao {
-    background-color: #f3ecfb;
-    color: #8e44ad;
+    background-color: #fef3e0;
+    color: #d9a404;
 }
 
 .etiqueta-concluida {
