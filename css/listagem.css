@@ -1,0 +1,212 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f6f9;
+    margin: 0;
+    color: #333333;
+}
+
+
+/* ===== Cabeçalho / menu ===== */
+
+#cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background-color: #1c2b41;
+    padding: 15px 40px;
+}
+
+.logo {
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.logo-destaque {
+    color: #4a90e2;
+}
+
+.menu {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.item-menu {
+    color: #cbd3dc;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.item-menu-ativo {
+    background-color: #4a90e2;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+
+
+/* ===== Conteúdo da página ===== */
+
+.conteudo {
+    width: 1160px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+h1 {
+    color: #1c2b41;
+}
+
+.subtitulo {
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 0;
+}
+
+
+/* ===== Caixa de filtros ===== */
+
+.caixa-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.campo-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.rotulo {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 0;
+}
+
+.campo-simulado {
+    display: block;
+    width: 160px;
+    background-color: #f9fafb;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.placeholder {
+    color: #9aa3af;
+    font-size: 14px;
+    margin-top: 0;
+}
+
+.botao-filtrar {
+    display: block;
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 6px;
+    padding: 9px 20px;
+    font-size: 14px;
+    text-align: center;
+}
+
+
+/* ===== Caixa e tabela de demandas ===== */
+
+.caixa-tabela {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.tabela-demandas {
+    width: 100%;
+}
+
+.tabela-demandas th {
+    text-align: left;
+    font-size: 12px;
+    color: #9aa3af;
+    padding: 12px 10px;
+}
+
+.tabela-demandas td {
+    padding: 14px 10px;
+    font-size: 14px;
+}
+
+.linha-cabecalho {
+    background-color: #f9fafb;
+}
+
+.link-detalhes {
+    color: #4a90e2;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+
+/* ===== Etiquetas de prioridade e status ===== */
+
+.etiqueta {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.etiqueta-critica {
+    background-color: #fdecea;
+    color: #d93025;
+}
+
+.etiqueta-alta {
+    background-color: #fef3e0;
+    color: #e08e0b;
+}
+
+.etiqueta-media {
+    background-color: #eef0f2;
+    color: #6b7280;
+}
+
+.etiqueta-baixa {
+    background-color: #eef0f2;
+    color: #9aa3af;
+}
+
+.etiqueta-aberta {
+    background-color: #e8f0fd;
+    color: #3b76c2;
+}
+
+.etiqueta-andamento {
+    background-color: #fef3e0;
+    color: #e08e0b;
+}
+
+.etiqueta-revisao {
+    background-color: #f3ecfb;
+    color: #8e44ad;
+}
+
+.etiqueta-concluida {
+    background-color: #e6f6ec;
+    color: #1e8e3e;
+}
+
+.etiqueta-cancelada {
+    background-color: #fdecea;
+    color: #d93025;
+}
