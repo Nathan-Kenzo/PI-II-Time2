@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Sistema de Demandas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Cabeçalho e menu, iguais em todas as telas do sistema -->
+  <header class="cabecalho">
+    <div class="logo">Demanda<span>Track</span></div>
+
+    <nav class="menu">
+      <a href="login.html">Login</a>
+      <a href="dashboard.html" class="ativo">Dashboard</a>
+      <a href="listagem.html">Demandas</a>
+      <a href="cadastro.html">Nova Demanda</a>
+    </nav>
+  </header>
+
+  <main class="conteudo">
+    <h1 class="titulo-pagina">Dashboard</h1>
+    <p class="subtitulo-pagina">Resumo geral das demandas cadastradas no sistema</p>
+
+    <!-- Total de demandas + contagem por status -->
+    <section class="grade-resumo">
+      <div class="card card-metrica">
+        <span class="metrica-numero">0</span>
+        <span class="metrica-legenda">Total de demandas</span>
+      </div>
+
+      <div class="card card-metrica">
+        <span class="metrica-numero" style="color: var(--status-aberta);">0</span>
+        <span class="metrica-legenda">Abertas</span>
+      </div>
+
+      <div class="card card-metrica">
+        <span class="metrica-numero" style="color: var(--status-andamento);">0</span>
+        <span class="metrica-legenda">Em andamento</span>
+      </div>
+
+      <div class="card card-metrica">
+        <span class="metrica-numero" style="color: var(--status-revisao);">0</span>
+        <span class="metrica-legenda">Em revisão</span>
+      </div>
+
+      <div class="card card-metrica">
+        <span class="metrica-numero" style="color: var(--status-concluida);">0</span>
+        <span class="metrica-legenda">Concluídas</span>
+      </div>
+
+      <div class="card card-metrica">
+        <span class="metrica-numero" style="color: var(--status-cancelada);">0</span>
+        <span class="metrica-legenda">Canceladas</span>
+      </div>
+    </section>
+
+    <!-- Demandas por prioridade e por tipo -->
+    <section class="grade-duas-colunas">
+      <div class="card">
+        <h2 class="titulo-card">Demandas por prioridade</h2>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Crítica</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-critica);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Alta</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-alta);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Média</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-media);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Baixa</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-baixa);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="titulo-card">Demandas por tipo</h2>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Tarefa</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Defeito</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Melhoria</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+
+        <div class="barra-item">
+          <span class="barra-rotulo">Documentação</span>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
+          </div>
+          <span class="barra-valor">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demandas críticas em aberto e próximas do prazo -->
+    <section class="grade-duas-colunas">
+      <div class="card">
+        <h2 class="titulo-card">Demandas críticas em aberto</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Projeto</th>
+              <th>Responsável</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="4" class="tabela-vazia">Nenhuma demanda crítica em aberto</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 class="titulo-card">Demandas próximas do prazo</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Prazo</th>
+              <th>Prioridade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="4" class="tabela-vazia">Nenhuma demanda próxima do prazo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>
