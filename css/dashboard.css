@@ -344,3 +344,31 @@ tbody tr:hover {
   outline: none;
   border-color: var(--cor-primaria);
 }
+
+
+/* ---------------------------------------------------------------
+   Etiquetas coloridas de status e de prioridade
+   Acrescentado por Pedro Tiezo Sales Shimizu na integracao com os
+   dados, para que as tabelas do dashboard usem a mesma identidade
+   visual da listagem e da tela de demanda.
+   --------------------------------------------------------------- */
+
+.etiqueta {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.etiqueta-aberta    { background-color: #eef0f2; color: var(--status-aberta); }
+.etiqueta-andamento { background-color: #e8f0fd; color: var(--status-andamento); }
+.etiqueta-revisao   { background-color: #fef3e0; color: var(--status-revisao); }
+.etiqueta-concluida { background-color: #e6f6ec; color: var(--status-concluida); }
+.etiqueta-cancelada { background-color: #fdecea; color: var(--status-cancelada); }
+
+.etiqueta-critica   { background-color: #fdecea; color: var(--prioridade-critica); }
+.etiqueta-alta      { background-color: #fef1e6; color: var(--prioridade-alta); }
+.etiqueta-media     { background-color: #fef3e0; color: var(--prioridade-media); }
+.etiqueta-baixa     { background-color: #e6f6ec; color: var(--prioridade-baixa); }

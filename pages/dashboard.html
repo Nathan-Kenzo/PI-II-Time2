@@ -1,10 +1,17 @@
 <!DOCTYPE html>
+<!--
+  Autor da estrutura e do layout: Felipe Oliveira dos Santos
+  Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
+  Descricao: Tela inicial com os indicadores resumidos das demandas.
+             Os numeros sao calculados em js/dashboard.js.
+-->
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Sistema de Demandas</title>
   <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/simulacao.css">
 </head>
 <body>
 
@@ -16,9 +23,12 @@
       <a href="login.html">Login</a>
       <a href="dashboard.html" class="ativo">Dashboard</a>
       <a href="listagem.html">Demandas</a>
-      <a href="cadastro.html">Nova Demanda</a>
+      <a href="demanda.html">Nova Demanda</a>
     </nav>
   </header>
+
+  <!-- Barra temporaria de simulacao de perfil (ver js/simulacao.js) -->
+  <div id="barra-simulacao"></div>
 
   <main class="conteudo">
     <h1 class="titulo-pagina">Dashboard</h1>
@@ -27,32 +37,32 @@
     <!-- Total de demandas + contagem por status -->
     <section class="grade-resumo">
       <div class="card card-metrica">
-        <span class="metrica-numero">0</span>
+        <span class="metrica-numero" id="metrica-total">0</span>
         <span class="metrica-legenda">Total de demandas</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-aberta);">0</span>
+        <span class="metrica-numero" id="metrica-aberta" style="color: var(--status-aberta);">0</span>
         <span class="metrica-legenda">Abertas</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-andamento);">0</span>
+        <span class="metrica-numero" id="metrica-andamento" style="color: var(--status-andamento);">0</span>
         <span class="metrica-legenda">Em andamento</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-revisao);">0</span>
+        <span class="metrica-numero" id="metrica-revisao" style="color: var(--status-revisao);">0</span>
         <span class="metrica-legenda">Em revisão</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-concluida);">0</span>
+        <span class="metrica-numero" id="metrica-concluida" style="color: var(--status-concluida);">0</span>
         <span class="metrica-legenda">Concluídas</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-cancelada);">0</span>
+        <span class="metrica-numero" id="metrica-cancelada" style="color: var(--status-cancelada);">0</span>
         <span class="metrica-legenda">Canceladas</span>
       </div>
     </section>
@@ -62,73 +72,15 @@
       <div class="card">
         <h2 class="titulo-card">Demandas por prioridade</h2>
 
-        <div class="barra-item">
-          <span class="barra-rotulo">Crítica</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-critica);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
-
-        <div class="barra-item">
-          <span class="barra-rotulo">Alta</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-alta);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
-
-        <div class="barra-item">
-          <span class="barra-rotulo">Média</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-media);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
-
-        <div class="barra-item">
-          <span class="barra-rotulo">Baixa</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--prioridade-baixa);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
+        <!-- Barras geradas por js/dashboard.js -->
+        <div id="barras-prioridade"></div>
       </div>
 
       <div class="card">
         <h2 class="titulo-card">Demandas por tipo</h2>
 
-        <div class="barra-item">
-          <span class="barra-rotulo">Tarefa</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
-
-        <div class="barra-item">
-          <span class="barra-rotulo">Defeito</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
-
-        <div class="barra-item">
-          <span class="barra-rotulo">Melhoria</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
-
-        <div class="barra-item">
-          <span class="barra-rotulo">Documentação</span>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width: 0%; background-color: var(--cor-primaria);"></div>
-          </div>
-          <span class="barra-valor">0</span>
-        </div>
+        <!-- Barras geradas por js/dashboard.js -->
+        <div id="barras-tipo"></div>
       </div>
     </section>
 
@@ -145,11 +97,7 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td colspan="4" class="tabela-vazia">Nenhuma demanda crítica em aberto</td>
-            </tr>
-          </tbody>
+          <tbody id="corpo-criticas"></tbody>
         </table>
       </div>
 
@@ -164,15 +112,17 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td colspan="4" class="tabela-vazia">Nenhuma demanda próxima do prazo</td>
-            </tr>
-          </tbody>
+          <tbody id="corpo-prazo"></tbody>
         </table>
       </div>
     </section>
   </main>
+
+  <script src="../js/dados.js"></script>
+  <script src="../js/permissoes.js"></script>
+  <script src="../js/formato.js"></script>
+  <script src="../js/simulacao.js"></script>
+  <script src="../js/dashboard.js"></script>
 
 </body>
 </html>

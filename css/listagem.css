@@ -1,3 +1,9 @@
+/**
+ * Autor do layout: Nathan Kenzo Puzipe
+ * Ajustes para os campos reais de filtro: Pedro Tiezo Sales Shimizu
+ * Descricao: Estilos da tela de listagem de demandas.
+ */
+
 body {
     font-family: Arial, Helvetica, sans-serif;
     background-color: #f4f6f9;
@@ -46,7 +52,7 @@ body {
 
 
 .conteudo {
-    width: 1160px;
+    max-width: 1160px;
     margin: 30px auto;
     padding: 0 20px;
 }
@@ -87,29 +93,92 @@ h1 {
     margin-top: 0;
 }
 
-.campo-simulado {
+/* Campos reais de filtro, no lugar das caixas simuladas do rascunho */
+.campo-entrada {
     display: block;
     width: 160px;
-    background-color: #f9fafb;
+    background-color: #ffffff;
     border: 1px solid #d1d5db;
     border-radius: 6px;
     padding: 8px 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #333333;
 }
 
-.placeholder {
+.campo-entrada:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.campo-entrada::placeholder {
     color: #9aa3af;
-    font-size: 14px;
-    margin-top: 0;
 }
 
 .botao-filtrar {
     display: block;
     background-color: #4a90e2;
     color: white;
+    border: none;
     border-radius: 6px;
     padding: 9px 20px;
     font-size: 14px;
+    font-family: inherit;
     text-align: center;
+    cursor: pointer;
+    align-self: flex-end;
+}
+
+.botao-filtrar:hover {
+    background-color: #3a7bc8;
+}
+
+
+/* Titulo da pagina com o botao de nova demanda ao lado */
+.topo-pagina {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.botao-nova-demanda {
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.botao-nova-demanda:hover {
+    background-color: #3a7bc8;
+}
+
+.oculto {
+    display: none;
+}
+
+
+/* Quantidade de demandas exibidas apos os filtros */
+.contador-resultados {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Linha unica exibida quando nenhum resultado atende aos filtros */
+.linha-vazia td {
+    text-align: center;
+    color: #9aa3af;
+    font-style: italic;
+    padding: 30px 10px;
+}
+
+/* Responsaveis: a demanda pode ter mais de um */
+.coluna-responsaveis {
+    max-width: 200px;
 }
 
 
@@ -145,6 +214,7 @@ h1 {
     color: #4a90e2;
     font-size: 13px;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 

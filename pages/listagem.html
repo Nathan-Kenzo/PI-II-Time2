@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+  Autor da estrutura e do layout: Nathan Kenzo Puzipe
+  Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
+  Descricao: Tela de listagem de demandas. Os filtros e a tabela sao preenchidos
+             em tempo de execucao pelo arquivo js/listagem.js.
+-->
 <html lang="pt-BR">
 
 <head>
@@ -9,6 +15,7 @@
     <title>DemandaTrack - Demandas</title>
 
     <link rel="stylesheet" href="../css/listagem.css">
+    <link rel="stylesheet" href="../css/simulacao.css">
 
 </head>
 
@@ -24,146 +31,110 @@
             <a href="login.html" class="item-menu">Login</a>
             <a href="dashboard.html" class="item-menu">Dashboard</a>
             <div class="item-menu item-menu-ativo">Demandas</div>
-            <div class="item-menu">Nova Demanda</div>
+            <a href="demanda.html" class="item-menu">Nova Demanda</a>
         </div>
 
     </div>
 
+    <!-- Barra temporaria de simulacao de perfil (ver js/simulacao.js) -->
+    <div id="barra-simulacao"></div>
+
 
     <div class="conteudo">
 
-        <h1>Demandas</h1>
-
-        <p class="subtitulo">
-            Lista de todas as demandas cadastradas no sistema
-        </p>
+        <div class="topo-pagina">
+            <div>
+                <h1>Demandas</h1>
+                <p class="subtitulo" id="subtitulo-listagem">
+                    Lista de todas as demandas cadastradas no sistema
+                </p>
+            </div>
+            <!-- Botao exibido apenas para os perfis que podem criar demandas -->
+            <a href="demanda.html" class="botao-nova-demanda oculto" id="botao-nova-demanda">
+                + Nova demanda
+            </a>
+        </div>
 
 
         <div class="caixa-filtros">
 
             <div class="campo-filtro">
-                <p class="rotulo">Buscar</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Título ou descrição</p>
-                </div>
+                <label class="rotulo" for="filtro-busca">Buscar</label>
+                <input type="text" id="filtro-busca" class="campo-entrada"
+                       placeholder="Titulo ou descricao">
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Status</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todos</p>
-                </div>
+                <label class="rotulo" for="filtro-status">Status</label>
+                <select id="filtro-status" class="campo-entrada"></select>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Prioridade</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todas</p>
-                </div>
+                <label class="rotulo" for="filtro-prioridade">Prioridade</label>
+                <select id="filtro-prioridade" class="campo-entrada"></select>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Tipo</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todos</p>
-                </div>
+                <label class="rotulo" for="filtro-tipo">Tipo</label>
+                <select id="filtro-tipo" class="campo-entrada"></select>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Responsável</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todos</p>
-                </div>
+                <label class="rotulo" for="filtro-responsavel">Responsavel</label>
+                <select id="filtro-responsavel" class="campo-entrada"></select>
             </div>
 
-            <div class="botao-filtrar">
-                <strong>Filtrar</strong>
+            <div class="campo-filtro">
+                <label class="rotulo" for="filtro-projeto">Projeto</label>
+                <select id="filtro-projeto" class="campo-entrada"></select>
             </div>
+
+            <div class="campo-filtro">
+                <label class="rotulo" for="filtro-ordem">Ordenar por</label>
+                <select id="filtro-ordem" class="campo-entrada"></select>
+            </div>
+
+            <button type="button" class="botao-filtrar" id="botao-limpar">
+                <strong>Limpar filtros</strong>
+            </button>
 
         </div>
 
 
         <div class="caixa-tabela">
 
+            <p class="contador-resultados" id="contador-resultados"></p>
+
             <table class="tabela-demandas" border="0">
 
-                <tr class="linha-cabecalho">
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Prioridade</th>
-                    <th>Status</th>
-                    <th>Projeto</th>
-                    <th>Responsável</th>
-                    <th>Criação</th>
-                    <th>Prazo</th>
-                    <th></th>
-                </tr>
+                <thead>
+                    <tr class="linha-cabecalho">
+                        <th>Titulo</th>
+                        <th>Tipo</th>
+                        <th>Prioridade</th>
+                        <th>Status</th>
+                        <th>Projeto</th>
+                        <th>Responsaveis</th>
+                        <th>Criacao</th>
+                        <th>Prazo</th>
+                        <th></th>
+                    </tr>
+                </thead>
 
-                <tr>
-                    <td>Corrigir erro no login</td>
-                    <td>Defeito</td>
-                    <td><div class="etiqueta etiqueta-critica">Crítica</div></td>
-                    <td><div class="etiqueta etiqueta-aberta">Aberta</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>20/08/2026</td>
-                    <td>29/08/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr>
-                    <td>Criar tela de dashboard</td>
-                    <td>Tarefa</td>
-                    <td><div class="etiqueta etiqueta-alta">Alta</div></td>
-                    <td><div class="etiqueta etiqueta-andamento">Em andamento</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>21/08/2026</td>
-                    <td>02/09/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr>
-                    <td>Documentar rotas da API</td>
-                    <td>Documentação</td>
-                    <td><div class="etiqueta etiqueta-media">Média</div></td>
-                    <td><div class="etiqueta etiqueta-revisao">Em revisão</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>22/08/2026</td>
-                    <td>05/09/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr>
-                    <td>Ajustar espaçamento do menu</td>
-                    <td>Melhoria</td>
-                    <td><div class="etiqueta etiqueta-baixa">Baixa</div></td>
-                    <td><div class="etiqueta etiqueta-concluida">Concluída</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>18/08/2026</td>
-                    <td>25/08/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr>
-                    <td>Cadastro duplicado de usuário</td>
-                    <td>Defeito</td>
-                    <td><div class="etiqueta etiqueta-alta">Alta</div></td>
-                    <td><div class="etiqueta etiqueta-cancelada">Cancelada</div></td>
-                    <td>DemandaTrack</td>
-                    <td>-</td>
-                    <td>15/08/2026</td>
-                    <td>-</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
+                <!-- As linhas sao geradas por js/listagem.js a partir das demandas -->
+                <tbody id="corpo-tabela"></tbody>
 
             </table>
 
         </div>
 
     </div>
+
+    <script src="../js/dados.js"></script>
+    <script src="../js/permissoes.js"></script>
+    <script src="../js/formato.js"></script>
+    <script src="../js/simulacao.js"></script>
+    <script src="../js/listagem.js"></script>
 
 </body>
 
