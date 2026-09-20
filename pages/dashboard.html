@@ -24,42 +24,45 @@
     <h1 class="titulo-pagina">Dashboard</h1>
     <p class="subtitulo-pagina">Resumo geral das demandas cadastradas no sistema</p>
 
+    <!-- aparece só quando alguma demanda tem dados inválidos -->
+    <p class="aviso-dados" id="aviso-dados" hidden></p>
+
     <!-- Total de demandas + contagem por status -->
     <section class="grade-resumo">
       <div class="card card-metrica">
-        <span class="metrica-numero">0</span>
+        <span class="metrica-numero" id="num-total">0</span>
         <span class="metrica-legenda">Total de demandas</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-aberta);">0</span>
+        <span class="metrica-numero" id="num-abertas" style="color: var(--status-aberta);">0</span>
         <span class="metrica-legenda">Abertas</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-andamento);">0</span>
+        <span class="metrica-numero" id="num-andamento" style="color: var(--status-andamento);">0</span>
         <span class="metrica-legenda">Em andamento</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-revisao);">0</span>
+        <span class="metrica-numero" id="num-revisao" style="color: var(--status-revisao);">0</span>
         <span class="metrica-legenda">Em revisão</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-concluida);">0</span>
+        <span class="metrica-numero" id="num-concluidas" style="color: var(--status-concluida);">0</span>
         <span class="metrica-legenda">Concluídas</span>
       </div>
 
       <div class="card card-metrica">
-        <span class="metrica-numero" style="color: var(--status-cancelada);">0</span>
+        <span class="metrica-numero" id="num-canceladas" style="color: var(--status-cancelada);">0</span>
         <span class="metrica-legenda">Canceladas</span>
       </div>
     </section>
 
     <!-- Demandas por prioridade e por tipo -->
     <section class="grade-duas-colunas">
-      <div class="card">
+      <div class="card" id="card-prioridade">
         <h2 class="titulo-card">Demandas por prioridade</h2>
 
         <div class="barra-item">
@@ -95,7 +98,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="card-tipo">
         <h2 class="titulo-card">Demandas por tipo</h2>
 
         <div class="barra-item">
@@ -145,7 +148,7 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="tabela-criticas">
             <tr>
               <td colspan="4" class="tabela-vazia">Nenhuma demanda crítica em aberto</td>
             </tr>
@@ -164,7 +167,7 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="tabela-prazo">
             <tr>
               <td colspan="4" class="tabela-vazia">Nenhuma demanda próxima do prazo</td>
             </tr>
@@ -174,5 +177,6 @@
     </section>
   </main>
 
+  <script src="../js/dashboard.js"></script>
 </body>
 </html>
