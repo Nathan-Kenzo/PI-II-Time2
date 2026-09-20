@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!--
+    Arquivo : listagem.html
+    Autor   : Nathan Kenzo Puzipe (Japa)
+    Projeto : PI2 – DemandaTrack (Sistema de Acompanhamento de Demandas)
+    Etapa   : Reunião 3 – listagem com filtros validados em JavaScript
+
+    Alterações da Reunião 3 em relação à Reunião 2:
+      - Os campos "simulados" dos filtros viraram campos reais
+        (input/select) dentro de um <form>.
+      - Cada linha da tabela ganhou data-descricao, usado na busca.
+      - Foram incluídos o texto de contagem e o script ../js/listagem.js.
+-->
 <html lang="pt-BR">
 
 <head>
@@ -39,51 +51,74 @@
         </p>
 
 
-        <div class="caixa-filtros">
+        <!-- Filtros: agora um formulário real, validado por listagem.js -->
+        <form class="caixa-filtros" id="form-filtros" action="#" method="get" novalidate>
 
-            <div class="campo-filtro">
-                <p class="rotulo">Buscar</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Título ou descrição</p>
-                </div>
+            <!-- Aviso geral: só aparece quando o envio é bloqueado -->
+            <div id="resumo-erros" class="resumo-erros" role="alert" hidden></div>
+
+            <div class="campo-filtro campo-filtro-busca">
+                <label class="rotulo" for="filtro-busca">Buscar</label>
+                <input type="search" id="filtro-busca" name="busca" class="campo-entrada"
+                       placeholder="Título ou descrição" autocomplete="off">
+                <span class="mensagem-erro" data-erro-para="filtro-busca" hidden></span>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Status</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todos</p>
-                </div>
+                <label class="rotulo" for="filtro-status">Status</label>
+                <select id="filtro-status" name="status" class="campo-entrada">
+                    <option value="">Todos</option>
+                    <option value="Aberta">Aberta</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Em revisão">Em revisão</option>
+                    <option value="Concluída">Concluída</option>
+                    <option value="Cancelada">Cancelada</option>
+                </select>
+                <span class="mensagem-erro" data-erro-para="filtro-status" hidden></span>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Prioridade</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todas</p>
-                </div>
+                <label class="rotulo" for="filtro-prioridade">Prioridade</label>
+                <select id="filtro-prioridade" name="prioridade" class="campo-entrada">
+                    <option value="">Todas</option>
+                    <option value="Crítica">Crítica</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Média">Média</option>
+                    <option value="Baixa">Baixa</option>
+                </select>
+                <span class="mensagem-erro" data-erro-para="filtro-prioridade" hidden></span>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Tipo</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todos</p>
-                </div>
+                <label class="rotulo" for="filtro-tipo">Tipo</label>
+                <select id="filtro-tipo" name="tipo" class="campo-entrada">
+                    <option value="">Todos</option>
+                    <option value="Tarefa">Tarefa</option>
+                    <option value="Defeito">Defeito</option>
+                    <option value="Melhoria">Melhoria</option>
+                    <option value="Documentação">Documentação</option>
+                </select>
+                <span class="mensagem-erro" data-erro-para="filtro-tipo" hidden></span>
             </div>
 
             <div class="campo-filtro">
-                <p class="rotulo">Responsável</p>
-                <div class="campo-simulado">
-                    <p class="placeholder">Todos</p>
-                </div>
+                <label class="rotulo" for="filtro-responsavel">Responsável</label>
+                <!-- As opções são preenchidas por listagem.js com os nomes da tabela -->
+                <select id="filtro-responsavel" name="responsavel" class="campo-entrada">
+                    <option value="">Todos</option>
+                </select>
+                <span class="mensagem-erro" data-erro-para="filtro-responsavel" hidden></span>
             </div>
 
-            <div class="botao-filtrar">
-                <strong>Filtrar</strong>
-            </div>
+            <button type="submit" class="botao-filtrar">Filtrar</button>
+            <button type="button" id="btn-limpar" class="botao-limpar">Limpar</button>
 
-        </div>
+        </form>
 
 
         <div class="caixa-tabela">
+
+            <p id="contagem" class="contagem" aria-live="polite"></p>
 
             <table class="tabela-demandas" border="0">
 
@@ -99,7 +134,7 @@
                     <th></th>
                 </tr>
 
-                <tr>
+                <tr data-descricao="Usuário não consegue entrar mesmo com e-mail e senha corretos.">
                     <td>Corrigir erro no login</td>
                     <td>Defeito</td>
                     <td><div class="etiqueta etiqueta-critica">Crítica</div></td>
@@ -111,7 +146,7 @@
                     <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
                 </tr>
 
-                <tr>
+                <tr data-descricao="Desenvolver a tela com o resumo das demandas por status e prioridade.">
                     <td>Criar tela de dashboard</td>
                     <td>Tarefa</td>
                     <td><div class="etiqueta etiqueta-alta">Alta</div></td>
@@ -123,7 +158,7 @@
                     <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
                 </tr>
 
-                <tr>
+                <tr data-descricao="Descrever endpoints, parâmetros e respostas da API.">
                     <td>Documentar rotas da API</td>
                     <td>Documentação</td>
                     <td><div class="etiqueta etiqueta-media">Média</div></td>
@@ -135,7 +170,7 @@
                     <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
                 </tr>
 
-                <tr>
+                <tr data-descricao="Corrigir o espaçamento entre os itens do menu superior.">
                     <td>Ajustar espaçamento do menu</td>
                     <td>Melhoria</td>
                     <td><div class="etiqueta etiqueta-baixa">Baixa</div></td>
@@ -147,7 +182,7 @@
                     <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
                 </tr>
 
-                <tr>
+                <tr data-descricao="O sistema permite criar dois usuários com o mesmo e-mail.">
                     <td>Cadastro duplicado de usuário</td>
                     <td>Defeito</td>
                     <td><div class="etiqueta etiqueta-alta">Alta</div></td>
@@ -164,6 +199,9 @@
         </div>
 
     </div>
+
+    <!-- Validações dos filtros + filtragem da tabela (arquivo único) -->
+    <script src="../js/listagem.js"></script>
 
 </body>
 
