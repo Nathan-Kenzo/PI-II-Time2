@@ -185,7 +185,9 @@ PI-II-Time2/
 │   ├── formato.js         # Funções de formatação reutilizáveis
 │   ├── listagem.js        # Filtros, busca e ordenação
 │   ├── permissoes.js      # Regras de acesso por perfil
-│   └── simulacao.js       # Troca de perfil para demonstração
+│   ├── simulacao.js       # Troca de perfil para demonstração
+│   ├── validacoes.js      # Regras de validação de demandas e de filtros
+│   └── validacoes.test.js # Autoteste das regras de validação
 ├── pages/                 # Telas do sistema
 │   ├── cadastro.html
 │   ├── dashboard.html
@@ -225,6 +227,15 @@ cd PI-II-Time2
 Nesta etapa o projeto é composto apenas por arquivos estáticos e funciona com
 dados simulados, sem necessidade de servidor ou banco de dados. Basta abrir o
 arquivo `index.html` no navegador.
+
+### Rodando o autoteste das validações
+
+As regras de validação têm um autoteste que roda no Node, sem navegador e sem
+biblioteca de teste. Ele falha se alguma regra deixar de valer:
+
+```bash
+node js/validacoes.test.js
+```
 
 > [!NOTE]
 > As instruções de instalação de dependências, configuração do banco de dados,

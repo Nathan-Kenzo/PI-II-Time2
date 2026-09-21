@@ -34,6 +34,9 @@
     <h1 class="titulo-pagina">Dashboard</h1>
     <p class="subtitulo-pagina">Resumo geral das demandas cadastradas no sistema</p>
 
+    <!-- Aparece so quando alguma demanda tem dados invalidos (ver js/validacoes.js) -->
+    <p class="aviso-dados" id="aviso-dados" hidden></p>
+
     <!-- Total de demandas + contagem por status -->
     <section class="grade-resumo">
       <div class="card card-metrica">
@@ -121,6 +124,7 @@
   <script src="../js/dados.js"></script>
   <script src="../js/permissoes.js"></script>
   <script src="../js/formato.js"></script>
+  <script src="../js/validacoes.js"></script>
   <script src="../js/simulacao.js"></script>
   <script src="../js/dashboard.js"></script>
 

@@ -15,8 +15,15 @@ const DIAS_PROXIMO_DO_PRAZO = 15;
 
 document.addEventListener('DOMContentLoaded', function () {
   const usuario = usuarioLogado();
-  const demandas = demandasVisiveis(usuario);
 
+  /*
+   * Demandas com dados invalidos nao entram nas contagens, para que um registro
+   * defeituoso nao distorca os indicadores. Ver js/validacoes.js.
+   */
+  const conferencia = separarDemandasValidas(demandasVisiveis(usuario));
+  const demandas = conferencia.validas;
+
+  avisarDemandasInvalidas(conferencia.invalidas);
   atualizarSubtitulo(usuario);
   contarPorStatus(demandas);
   desenharBarrasDePrioridade(demandas);
@@ -24,6 +31,18 @@ document.addEventListener('DOMContentLoaded', function () {
   listarCriticasEmAberto(demandas);
   listarProximasDoPrazo(demandas);
 });
+
+/* Avisa na tela quantas demandas ficaram de fora do resumo por terem dados invalidos. */
+function avisarDemandasInvalidas(quantidade) {
+  const aviso = document.getElementById('aviso-dados');
+  if (!aviso || quantidade === 0) {
+    return;
+  }
+  aviso.textContent = quantidade === 1
+    ? '1 demanda com dados invalidos foi ignorada no resumo.'
+    : quantidade + ' demandas com dados invalidos foram ignoradas no resumo.';
+  aviso.hidden = false;
+}
 
 /* Deixa claro se os numeros sao do sistema inteiro ou apenas dos projetos do usuario. */
 function atualizarSubtitulo(usuario) {

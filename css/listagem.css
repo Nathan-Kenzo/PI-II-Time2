@@ -1,7 +1,14 @@
-/**
- * Autor do layout: Nathan Kenzo Puzipe
- * Ajustes para os campos reais de filtro: Pedro Tiezo Sales Shimizu
- * Descricao: Estilos da tela de listagem de demandas.
+/*
+ * Arquivo : listagem.css
+ * Autor do layout : Nathan Kenzo Puzipe (Japa)
+ * Estilos de filtro, erro e contagem : Nathan Kenzo Puzipe (Japa)
+ * Ajustes para os campos reais de filtro : Pedro Tiezo Sales Shimizu
+ * Projeto : PI2 - DemandaTrack (Sistema de Acompanhamento de Demandas)
+ * Tela    : Listagem de demandas (pages/listagem.html)
+ *
+ * Tudo ate a secao "REUNIAO 3" e o CSS original da Reuniao 2. A secao
+ * "REUNIAO 3" no final acrescenta os estilos dos campos reais de filtro,
+ * das mensagens de erro e da contagem de resultados.
  */
 
 body {
@@ -269,4 +276,131 @@ h1 {
 .etiqueta-cancelada {
     background-color: #fdecea;
     color: #d93025;
+}
+
+/* =====================================================================
+   REUNIÃO 3 – filtros reais, validação e resultado da filtragem
+   ===================================================================== */
+
+/* O atributo hidden precisa vencer qualquer display definido acima. */
+[hidden] {
+    display: none !important;
+}
+
+/* Com mensagens de erro embaixo dos campos, alinhar pelo topo evita que
+   o botão "pule" quando um erro aparece. */
+.caixa-filtros {
+    align-items: flex-start;
+}
+
+/* Largura fixa: uma mensagem longa quebra de linha em vez de alargar o campo. */
+.campo-filtro {
+    width: 160px;
+}
+
+.campo-filtro-busca {
+    width: 220px;
+}
+
+/* Altura de 14px + gap de 5px = 19px, usado para alinhar os botões. */
+label.rotulo {
+    line-height: 14px;
+}
+
+/* Campos reais (substituem o .campo-simulado da Reunião 2). */
+.campo-entrada {
+    width: 100%;
+    height: 36px;
+    box-sizing: border-box;
+    background-color: #f9fafb;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #333333;
+}
+
+.campo-entrada::placeholder {
+    color: #9aa3af;
+}
+
+.campo-entrada:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: 1px;
+    background-color: white;
+}
+
+/* Estado de erro (classe adicionada pelo listagem.js). */
+.campo-entrada.invalido {
+    border-color: #d93025;
+    background-color: #fdecea;
+}
+
+.mensagem-erro {
+    color: #b42318;
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+/* Faixa de aviso no topo dos filtros quando o envio é bloqueado. */
+.resumo-erros {
+    flex-basis: 100%;
+    background-color: #fdecea;
+    color: #b42318;
+    border-left: 4px solid #d93025;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Botões: o botão "Filtrar" da Reunião 2 agora é um <button>. */
+.botao-filtrar,
+.botao-limpar {
+    height: 36px;
+    margin-top: 19px;
+    padding: 0 20px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.botao-filtrar {
+    border: none;
+    font-weight: bold;
+}
+
+.botao-filtrar:hover {
+    background-color: #3a7bc8;
+}
+
+.botao-limpar {
+    background-color: white;
+    color: #333333;
+    border: 1px solid #d1d5db;
+}
+
+.botao-limpar:hover {
+    background-color: #f4f6f9;
+}
+
+.botao-filtrar:focus-visible,
+.botao-limpar:focus-visible {
+    outline: 2px solid #1c2b41;
+    outline-offset: 2px;
+}
+
+/* Contagem "Exibindo X de Y demandas" e linha de "nenhum resultado". */
+.contagem {
+    color: #6b7280;
+    font-size: 13px;
+    margin: 0 0 10px 0;
+}
+
+.linha-vazia td {
+    text-align: center;
+    color: #6b7280;
+    padding: 30px 10px;
 }

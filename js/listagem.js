@@ -159,7 +159,7 @@ function ligarEventos() {
 
 /* Aplica todos os filtros e a busca textual sobre as demandas visiveis. */
 function filtrarDemandas() {
-  const busca = document.getElementById('filtro-busca').value.trim().toLowerCase();
+  const busca = buscaValidada();
   const status = document.getElementById('filtro-status').value;
   const prioridade = document.getElementById('filtro-prioridade').value;
   const tipo = document.getElementById('filtro-tipo').value;
@@ -202,6 +202,48 @@ function filtrarDemandas() {
     return true;
   });
 }
+
+/*
+ * Valida o texto digitado na busca antes de usa-lo como filtro (ver js/validacoes.js).
+ * Enquanto o texto estiver invalido a mensagem aparece abaixo do campo e a busca
+ * nao e aplicada, de modo que a tabela continua respeitando os demais filtros.
+ */
+function buscaValidada() {
+  const campo = document.getElementById('filtro-busca');
+  const mensagem = validarBusca(campo.value);
+
+  mostrarErroBusca(campo, mensagem);
+
+  return mensagem === '' ? campo.value.trim().toLowerCase() : '';
+}
+
+/* Cria uma unica vez, e mantem atualizada, a mensagem de erro do campo de busca. */
+function mostrarErroBusca(campo, mensagem) {
+  let erro = document.getElementById('erro-filtro-busca');
+
+  if (!erro) {
+    erro = document.createElement('span');
+    erro.className = 'mensagem-erro';
+    erro.id = 'erro-filtro-busca';
+    erro.hidden = true;
+    campo.insertAdjacentElement('afterend', erro);
+    // Liga o campo a mensagem para os leitores de tela.
+    campo.setAttribute('aria-describedby', erro.id);
+  }
+
+  if (mensagem) {
+    campo.classList.add('invalido');
+    campo.setAttribute('aria-invalid', 'true');
+    erro.textContent = mensagem;
+    erro.hidden = false;
+  } else {
+    campo.classList.remove('invalido');
+    campo.removeAttribute('aria-invalid');
+    erro.textContent = '';
+    erro.hidden = true;
+  }
+}
+
 
 /*
  * Ordena a lista conforme o criterio escolhido.

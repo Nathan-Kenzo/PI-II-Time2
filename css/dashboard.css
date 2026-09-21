@@ -372,3 +372,13 @@ tbody tr:hover {
 .etiqueta-alta      { background-color: #fef1e6; color: var(--prioridade-alta); }
 .etiqueta-media     { background-color: #fef3e0; color: var(--prioridade-media); }
 .etiqueta-baixa     { background-color: #e6f6ec; color: var(--prioridade-baixa); }
+/* aviso de demandas com dados inválidos */
+.aviso-dados {
+  background-color: #fef2f2;
+  border: 1px solid var(--status-cancelada);
+  color: var(--status-cancelada);
+  border-radius: var(--raio-borda);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
