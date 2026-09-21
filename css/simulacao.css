@@ -1,0 +1,46 @@
+/**
+ * Autor: Pedro Tiezo Sales Shimizu
+ * Descricao: Estilo da barra temporaria de simulacao de perfil, usada nas telas
+ *            de dashboard, listagem e demanda enquanto a autenticacao real nao
+ *            esta integrada. Deve ser removida junto com js/simulacao.js quando
+ *            a tela de login passar a definir o usuario da sessao.
+ */
+
+.barra-simulacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #fff8e1;
+  border-bottom: 1px solid #f0e2b6;
+  padding: 10px 40px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #8a6d1f;
+}
+
+.barra-simulacao select {
+  border: 1px solid #e3d29a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+.barra-simulacao .aviso-simulacao {
+  margin-left: auto;
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .barra-simulacao {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+  }
+
+  .barra-simulacao .aviso-simulacao {
+    margin-left: 0;
+  }
+}

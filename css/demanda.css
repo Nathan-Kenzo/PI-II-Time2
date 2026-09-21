@@ -1,0 +1,541 @@
+/**
+ * Autor: Pedro Tiezo Sales Shimizu
+ * Descricao: Estilos da tela de criacao e edicao de demandas (pages/demanda.html).
+ *            Reutiliza a mesma identidade visual das demais telas do DemandaTrack.
+ */
+
+/* Variaveis de cor e medida compartilhadas com as outras telas do sistema */
+:root {
+  --cor-fundo: #f5f6f8;
+  --cor-superficie: #ffffff;
+  --cor-borda: #e2e5ea;
+
+  --cor-texto: #1f2937;
+  --cor-texto-suave: #6b7280;
+
+  --cor-header: #1f2a44;
+  --cor-primaria: #2d6cdf;
+  --cor-primaria-escura: #2456b3;
+
+  /* cores de status da demanda */
+  --status-aberta: #64748b;
+  --status-andamento: #2d6cdf;
+  --status-revisao: #d9a404;
+  --status-concluida: #16a34a;
+  --status-cancelada: #dc2626;
+
+  /* cores de prioridade */
+  --prioridade-critica: #dc2626;
+  --prioridade-alta: #ea580c;
+  --prioridade-media: #d9a404;
+  --prioridade-baixa: #16a34a;
+
+  --raio-borda: 8px;
+  --sombra-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+
+/* ---------------------------------------------------------------
+   Cabecalho e menu (padrao repetido em todas as telas)
+   --------------------------------------------------------------- */
+
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--cor-header);
+  padding: 15px 40px;
+}
+
+.logo {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.logo span {
+  color: var(--cor-primaria);
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.menu a {
+  color: #cbd3dc;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.menu a:hover {
+  color: #ffffff;
+}
+
+.menu a.ativo {
+  background-color: var(--cor-primaria);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+
+
+/* ---------------------------------------------------------------
+   Area de conteudo
+   --------------------------------------------------------------- */
+
+.conteudo {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.titulo-pagina {
+  margin: 0;
+  font-size: 26px;
+  color: var(--cor-header);
+}
+
+.subtitulo-pagina {
+  margin: 6px 0 20px 0;
+  font-size: 14px;
+  color: var(--cor-texto-suave);
+}
+
+.card {
+  background-color: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  box-shadow: var(--sombra-card);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin: 0 0 4px 0;
+  font-size: 17px;
+  color: var(--cor-header);
+}
+
+.card .descricao-secao {
+  margin: 0 0 18px 0;
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+}
+
+
+/* ---------------------------------------------------------------
+   Formulario da demanda
+   --------------------------------------------------------------- */
+
+.grade-formulario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Campos que ocupam a largura inteira do formulario */
+.campo-largo {
+  grid-column: 1 / -1;
+}
+
+.campo label {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--cor-texto);
+}
+
+.campo .ajuda {
+  font-size: 12px;
+  color: var(--cor-texto-suave);
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  width: 100%;
+  border: 1px solid #d5d8dc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--cor-texto);
+  background-color: #ffffff;
+}
+
+.campo textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--cor-primaria);
+}
+
+/* Campo bloqueado por falta de permissao ou por regra de negocio */
+.campo input:disabled,
+.campo select:disabled,
+.campo textarea:disabled {
+  background-color: #f1f3f5;
+  color: #8b939c;
+  cursor: not-allowed;
+}
+
+/* Campo de texto do tipo personalizado, exibido logo abaixo da lista de tipos */
+#tipo-personalizado {
+  margin-top: 2px;
+}
+
+
+/* ---------------------------------------------------------------
+   Lista de responsaveis com caixas de marcacao
+   A demanda aceita mais de um responsavel.
+   --------------------------------------------------------------- */
+
+.lista-responsaveis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+  border: 1px solid #d5d8dc;
+  border-radius: 6px;
+  padding: 12px;
+  background-color: #ffffff;
+}
+
+.opcao-responsavel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.opcao-responsavel:hover {
+  background-color: #f5f7fa;
+}
+
+/* Destaca visualmente quem esta marcado como responsavel */
+.opcao-responsavel.marcada {
+  background-color: #e8f0fd;
+  border-color: #c5d9f7;
+}
+
+.opcao-responsavel input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.opcao-responsavel .perfil-responsavel {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--cor-texto-suave);
+}
+
+/* Aparencia da lista quando o usuario nao pode alterar os responsaveis */
+.lista-responsaveis.bloqueada {
+  background-color: #f1f3f5;
+}
+
+.lista-responsaveis.bloqueada .opcao-responsavel {
+  color: #8b939c;
+  cursor: not-allowed;
+}
+
+.lista-responsaveis.bloqueada .opcao-responsavel:hover {
+  background-color: transparent;
+}
+
+.lista-responsaveis.bloqueada .opcao-responsavel input {
+  cursor: not-allowed;
+}
+
+
+/* Mensagem de erro exibida abaixo de um campo invalido */
+.erro-campo {
+  font-size: 12px;
+  color: var(--status-cancelada);
+  min-height: 15px;
+}
+
+.campo.invalido input,
+.campo.invalido select,
+.campo.invalido textarea {
+  border-color: var(--status-cancelada);
+}
+
+
+/* ---------------------------------------------------------------
+   Botoes
+   --------------------------------------------------------------- */
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.botao {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.botao-primario {
+  background-color: var(--cor-primaria);
+  color: #ffffff;
+}
+
+.botao-primario:hover {
+  background-color: var(--cor-primaria-escura);
+}
+
+.botao-secundario {
+  background-color: #ffffff;
+  border-color: #d5d8dc;
+  color: var(--cor-texto);
+}
+
+.botao-secundario:hover {
+  background-color: #f1f3f5;
+}
+
+/* Cancelar a demanda nao apaga o registro, apenas muda o status */
+.botao-perigo {
+  background-color: #ffffff;
+  border-color: #f0b4b4;
+  color: var(--status-cancelada);
+  margin-left: auto;
+}
+
+.botao-perigo:hover {
+  background-color: #fdecea;
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ---------------------------------------------------------------
+   Etiquetas de status e de prioridade
+   --------------------------------------------------------------- */
+
+.etiqueta {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.etiqueta-aberta      { background-color: #eef0f2; color: var(--status-aberta); }
+.etiqueta-andamento   { background-color: #e8f0fd; color: var(--status-andamento); }
+.etiqueta-revisao     { background-color: #fef3e0; color: var(--status-revisao); }
+.etiqueta-concluida   { background-color: #e6f6ec; color: var(--status-concluida); }
+.etiqueta-cancelada   { background-color: #fdecea; color: var(--status-cancelada); }
+
+.etiqueta-critica     { background-color: #fdecea; color: var(--prioridade-critica); }
+.etiqueta-alta        { background-color: #fef1e6; color: var(--prioridade-alta); }
+.etiqueta-media       { background-color: #fef3e0; color: var(--prioridade-media); }
+.etiqueta-baixa       { background-color: #e6f6ec; color: var(--prioridade-baixa); }
+
+
+/* ---------------------------------------------------------------
+   Cabecalho de identificacao da demanda (somente na edicao)
+   --------------------------------------------------------------- */
+
+.resumo-demanda {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.codigo-demanda {
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+  font-weight: bold;
+}
+
+.datas-demanda {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+  border-top: 1px solid var(--cor-borda);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+
+/* ---------------------------------------------------------------
+   Avisos gerais (permissao, feriado, sucesso)
+   --------------------------------------------------------------- */
+
+.aviso {
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.aviso-info {
+  background-color: #e8f0fd;
+  border: 1px solid #c5d9f7;
+  color: #1e4b9e;
+}
+
+.aviso-erro {
+  background-color: #fdecea;
+  border: 1px solid #f5c6c2;
+  color: #a4231c;
+}
+
+.aviso-sucesso {
+  background-color: #e6f6ec;
+  border: 1px solid #bfe6cd;
+  color: #14682f;
+}
+
+.oculto {
+  display: none;
+}
+
+
+/* ---------------------------------------------------------------
+   Comentarios
+   --------------------------------------------------------------- */
+
+.lista-comentarios {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.comentario {
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  padding: 12px 14px;
+  background-color: #fbfcfd;
+}
+
+.comentario-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.comentario-autor {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.comentario-data {
+  font-size: 12px;
+  color: var(--cor-texto-suave);
+}
+
+.comentario-texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+
+/* ---------------------------------------------------------------
+   Historico de alteracoes (nunca e apagado)
+   --------------------------------------------------------------- */
+
+.lista-historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lista-historico li {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-left: 3px solid var(--cor-primaria);
+  padding-left: 12px;
+}
+
+.historico-data {
+  color: var(--cor-texto-suave);
+  white-space: nowrap;
+}
+
+.lista-vazia {
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+  font-style: italic;
+}
+
+
+/* ---------------------------------------------------------------
+   Responsividade: em telas estreitas o formulario vira uma coluna
+   --------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .cabecalho {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 20px;
+  }
+
+  .grade-formulario {
+    grid-template-columns: 1fr;
+  }
+
+  .acoes {
+    flex-wrap: wrap;
+  }
+
+  .botao-perigo {
+    margin-left: 0;
+  }
+}

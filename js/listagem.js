@@ -1,469 +1,367 @@
 /**
- * =====================================================================
- * Arquivo : listagem.js
- * Autor   : Nathan Kenzo Puzipe (Japa)
- * Projeto : PI2 – DemandaTrack (Sistema de Acompanhamento de Demandas)
- * Etapa   : Reunião 3 – parte individual (validações em JavaScript)
- * Tela    : Listagem de demandas (html/listagem.html)
- * ---------------------------------------------------------------------
- * O que este arquivo faz
- *   1) VALIDAÇÕES: confere os filtros (Buscar, Status, Prioridade, Tipo
- *      e Responsável) antes de filtrar. Se houver dado inválido, o
- *      envio é bloqueado, o campo recebe uma mensagem de erro clara e o
- *      foco vai para o primeiro campo com problema.
- *   2) FILTRAGEM: com os dados válidos, esconde as linhas da tabela que
- *      não combinam com os filtros (todos valem juntos) e mostra
- *      "Exibindo X de Y demandas".
+ * Autor: Pedro Tiezo Sales Shimizu
+ * Descricao: Controle da tela de listagem de demandas (pages/listagem.html).
  *
- * Por que nenhum filtro é obrigatório
- *   Uma listagem sem filtro é o estado normal da tela (mostra tudo).
- *   Exigir preenchimento seria uma validação sem sentido aqui. As
- *   regras valem quando o campo é preenchido.
+ * Responsabilidades deste arquivo:
+ *   - carregar apenas as demandas que o usuario logado pode enxergar;
+ *   - montar os filtros de status, prioridade, tipo, responsavel e projeto;
+ *   - aplicar a busca textual por titulo ou descricao;
+ *   - ordenar os resultados por prioridade, criacao, prazo ou status;
+ *   - desenhar a tabela e dar acesso aos detalhes de cada demanda.
  *
- * Organização do arquivo
- *   Seção 1 – Configuração (IDs e regras)
- *   Seção 2 – Funções de validação
- *   Seção 3 – Leitura e filtragem da tabela
- *   Seção 4 – Formulário: erros na tela e envio
- *   Seção 5 – Inicialização
- *
- * A busca compara o título e, se a linha tiver o atributo
- * data-descricao, também a descrição. Ignora maiúsculas e acentos.
- *
- * Nas próximas etapas, a filtragem local (seção 3) poderá ser trocada
- * por uma chamada à API do backend Node.js; as validações (seção 2)
- * continuam valendo.
- * =====================================================================
+ * Itens 2.2.9 e 2.3 do documento de visao.
  */
-(function () {
-  'use strict';
 
-  /* ===================================================================
-   * 1. CONFIGURAÇÃO
-   * =================================================================== */
+/* Valor usado nos filtros para dizer "nao filtrar por este criterio". */
+const TODOS = '';
 
-  // IDs dos elementos em html/listagem.html.
-  const IDS = {
-    formulario: 'form-filtros',
-    resumoErros: 'resumo-erros',
-    botaoLimpar: 'btn-limpar',
-    contagem: 'contagem',
-    // A ordem desta lista define qual campo recebe o foco primeiro
-    // (mesma ordem em que aparecem na tela).
-    campos: {
-      busca: 'filtro-busca',
-      status: 'filtro-status',
-      prioridade: 'filtro-prioridade',
-      tipo: 'filtro-tipo',
-      responsavel: 'filtro-responsavel'
-    }
-  };
+/* Usuario autenticado no momento (na simulacao, o escolhido na barra do topo). */
+let usuarioListagem = null;
 
-  // Como a tabela representa "sem responsável" (célula com "-").
-  const SEM_RESPONSAVEL = 'Sem responsável';
+/* Demandas que o usuario pode ver. Os filtros trabalham sempre sobre esta lista. */
+let demandasDoUsuario = [];
 
-  // Regras de negócio da tela (vêm do escopo do PI2 e dos status
-  // usados na listagem).
-  const REGRAS = {
-    busca: { min: 2, max: 100 },
-    tipo: ['Tarefa', 'Defeito', 'Melhoria', 'Documentação'],
-    prioridade: ['Crítica', 'Alta', 'Média', 'Baixa'],
-    status: ['Aberta', 'Em andamento', 'Em revisão', 'Concluída', 'Cancelada'],
-    // Preenchida na inicialização com os responsáveis que existem na
-    // tabela. Enquanto for null, o campo não é checado contra lista.
-    responsavel: null
-  };
 
-  /* ===================================================================
-   * 2. FUNÇÕES DE VALIDAÇÃO (puras: recebem valores, devolvem mensagem)
-   *    Retornam '' quando o valor é válido.
-   * =================================================================== */
+/* ==========================================================================
+   Inicializacao
+   ========================================================================== */
 
-  /** Busca por título/descrição: sem só espaços, entre 2 e 100 caracteres. */
-  function validarBusca(valor) {
-    const texto = String(valor).trim();
-    if (texto === '') {
-      // Digitou algo, mas só espaços em branco.
-      return String(valor).length > 0
-        ? 'A busca não pode conter apenas espaços.'
-        : '';
-    }
-    if (texto.length < REGRAS.busca.min) {
-      return 'Digite pelo menos ' + REGRAS.busca.min + ' caracteres.';
-    }
-    if (texto.length > REGRAS.busca.max) {
-      return 'Use no máximo ' + REGRAS.busca.max + ' caracteres.';
-    }
-    return '';
+document.addEventListener('DOMContentLoaded', function () {
+  usuarioListagem = usuarioLogado();
+  demandasDoUsuario = demandasVisiveis(usuarioListagem);
+
+  montarFiltros();
+  ligarEventos();
+  aplicarPermissoes();
+  desenharTabela();
+});
+
+/* Mostra o botao de nova demanda somente para quem pode criar demandas. */
+function aplicarPermissoes() {
+  if (podeCriarDemanda(usuarioListagem)) {
+    document.getElementById('botao-nova-demanda').classList.remove('oculto');
   }
 
-  /**
-   * Select com lista fechada. Vazio = "Todos" (válido).
-   * Qualquer valor fora da lista (ex.: HTML alterado no navegador)
-   * é recusado.
+  // Explica ao usuario o alcance do que ele esta vendo.
+  const subtitulo = document.getElementById('subtitulo-listagem');
+  if (usuarioListagem.perfil === PERFIS.ADMIN) {
+    subtitulo.textContent = 'Lista de todas as demandas cadastradas no sistema';
+  } else {
+    subtitulo.textContent = 'Demandas dos projetos aos quais voce esta vinculado';
+  }
+}
+
+
+/* ==========================================================================
+   Filtros
+   ========================================================================== */
+
+function montarFiltros() {
+  /*
+   * A lista de tipos e montada a partir das proprias demandas, e nao da
+   * constante TIPOS, porque a demanda aceita tipos personalizados escritos
+   * pelo usuario.
    */
-  function validarOpcao(valor, permitidas, mensagem) {
-    if (valor === '') return '';
-    return permitidas.indexOf(valor) !== -1 ? '' : mensagem;
-  }
-
-  function validarTipo(valor) {
-    return validarOpcao(valor, REGRAS.tipo, 'Selecione um tipo válido.');
-  }
-
-  function validarPrioridade(valor) {
-    return validarOpcao(valor, REGRAS.prioridade, 'Selecione uma prioridade válida.');
-  }
-
-  function validarStatus(valor) {
-    return validarOpcao(valor, REGRAS.status, 'Selecione um status válido.');
-  }
-
-  function validarResponsavel(valor) {
-    if (REGRAS.responsavel === null) return ''; // lista ainda não montada
-    return validarOpcao(valor, REGRAS.responsavel, 'Selecione um responsável válido.');
-  }
-
-  /**
-   * Valida todos os filtros de uma vez.
-   * @param {Object} v  valores brutos dos campos
-   * @returns {{valido: boolean, erros: Object}}  erros indexado por campo
-   */
-  function validarFiltros(v) {
-    const erros = {};
-
-    const eBusca = validarBusca(v.busca);
-    if (eBusca) erros.busca = eBusca;
-
-    const eStatus = validarStatus(v.status);
-    if (eStatus) erros.status = eStatus;
-
-    const ePrioridade = validarPrioridade(v.prioridade);
-    if (ePrioridade) erros.prioridade = ePrioridade;
-
-    const eTipo = validarTipo(v.tipo);
-    if (eTipo) erros.tipo = eTipo;
-
-    const eResponsavel = validarResponsavel(v.responsavel);
-    if (eResponsavel) erros.responsavel = eResponsavel;
-
-    return { valido: Object.keys(erros).length === 0, erros: erros };
-  }
-
-  /* ===================================================================
-   * 3. LEITURA E FILTRAGEM DA TABELA
-   * =================================================================== */
-
-  /** Minúsculas e sem acentos, para a busca não depender disso. */
-  function normalizar(texto) {
-    return String(texto)
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
-  }
-
-  /**
-   * Lê a tabela e devolve um objeto com tudo que a filtragem precisa.
-   * Retorna null (e avisa no console) se algo esperado não existir.
-   */
-  function prepararTabela() {
-    const tabela = document.querySelector('.tabela-demandas');
-    if (!tabela) return null;
-
-    // Descobre em qual coluna está cada informação lendo o cabeçalho,
-    // então continua funcionando se a ordem das colunas mudar.
-    const cabecalhos = Array.prototype.map.call(
-      tabela.querySelectorAll('.linha-cabecalho th'),
-      function (th) { return normalizar(th.textContent); }
-    );
-    const coluna = {
-      titulo: cabecalhos.indexOf('titulo'),
-      tipo: cabecalhos.indexOf('tipo'),
-      prioridade: cabecalhos.indexOf('prioridade'),
-      status: cabecalhos.indexOf('status'),
-      responsavel: cabecalhos.indexOf('responsavel')
-    };
-    const faltando = Object.keys(coluna).filter(function (k) { return coluna[k] === -1; });
-    if (faltando.length > 0) {
-      console.error('listagem.js: coluna(s) não encontrada(s) no cabeçalho: ' + faltando.join(', '));
-      return null;
+  const tiposEmUso = [];
+  demandasDoUsuario.forEach(function (demanda) {
+    if (tiposEmUso.indexOf(demanda.tipo) < 0) {
+      tiposEmUso.push(demanda.tipo);
     }
-
-    // Linhas de dados (tudo que não é o cabeçalho).
-    const linhas = Array.prototype.filter.call(
-      tabela.querySelectorAll('tr'),
-      function (tr) { return !tr.classList.contains('linha-cabecalho'); }
-    );
-
-    function textoDaCelula(tr, indice) {
-      return tr.cells[indice] ? tr.cells[indice].textContent.trim() : '';
+  });
+  TIPOS.forEach(function (tipo) {
+    if (tiposEmUso.indexOf(tipo) < 0) {
+      tiposEmUso.push(tipo);
     }
+  });
 
-    const demandas = linhas.map(function (tr) {
-      const responsavel = textoDaCelula(tr, coluna.responsavel);
-      return {
-        tr: tr,
-        titulo: textoDaCelula(tr, coluna.titulo),
-        descricao: tr.getAttribute('data-descricao') || '',
-        tipo: textoDaCelula(tr, coluna.tipo),
-        prioridade: textoDaCelula(tr, coluna.prioridade),
-        status: textoDaCelula(tr, coluna.status),
-        responsavel: (responsavel === '' || responsavel === '-') ? SEM_RESPONSAVEL : responsavel
-      };
-    });
+  preencherFiltro('filtro-status', 'Todos', Object.values(STATUS));
+  preencherFiltro('filtro-prioridade', 'Todas', PRIORIDADES);
+  preencherFiltro('filtro-tipo', 'Todos', tiposEmUso.sort());
 
-    // Linha "nenhum resultado", criada aqui e mostrada só quando precisa.
-    const linhaVazia = document.createElement('tr');
-    linhaVazia.className = 'linha-vazia';
-    linhaVazia.hidden = true;
-    const celulaVazia = document.createElement('td');
-    celulaVazia.colSpan = cabecalhos.length;
-    celulaVazia.textContent = 'Nenhuma demanda encontrada com esses filtros.';
-    linhaVazia.appendChild(celulaVazia);
-    (tabela.tBodies[0] || tabela).appendChild(linhaVazia);
-
-    return { demandas: demandas, linhaVazia: linhaVazia };
-  }
-
-  /** Nomes de responsáveis presentes na tabela ("Sem responsável" por último). */
-  function listarResponsaveis(demandas) {
-    const nomes = [];
-    demandas.forEach(function (d) {
-      if (d.responsavel !== SEM_RESPONSAVEL && nomes.indexOf(d.responsavel) === -1) {
-        nomes.push(d.responsavel);
+  // Responsavel: apenas quem realmente aparece como responsavel nas demandas.
+  const responsaveis = [];
+  demandasDoUsuario.forEach(function (demanda) {
+    (demanda.responsaveisIds || []).forEach(function (id) {
+      if (responsaveis.indexOf(id) < 0) {
+        responsaveis.push(id);
       }
     });
-    nomes.sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
-    if (demandas.some(function (d) { return d.responsavel === SEM_RESPONSAVEL; })) {
-      nomes.push(SEM_RESPONSAVEL);
-    }
-    return nomes;
+  });
+  const opcoesResponsavel = responsaveis.map(function (id) {
+    return { valor: String(id), texto: nomeUsuario(id) };
+  });
+  opcoesResponsavel.push({ valor: 'sem', texto: 'Sem responsavel definido' });
+  preencherFiltro('filtro-responsavel', 'Todos', opcoesResponsavel);
+
+  // Projeto: apenas os projetos que o usuario enxerga.
+  preencherFiltro('filtro-projeto', 'Todos', projetosDisponiveis(usuarioListagem).map(function (projeto) {
+    return { valor: String(projeto.id), texto: projeto.nome };
+  }));
+
+  preencherFiltro('filtro-ordem', null, [
+    { valor: 'prioridade', texto: 'Prioridade' },
+    { valor: 'criacao', texto: 'Data de criacao' },
+    { valor: 'prazo', texto: 'Prazo de finalizacao' },
+    { valor: 'status', texto: 'Status' }
+  ]);
+}
+
+/*
+ * Preenche um select de filtro.
+ * As opcoes podem ser textos simples ou objetos { valor, texto }.
+ */
+function preencherFiltro(id, rotuloTodos, opcoes) {
+  const select = document.getElementById(id);
+  select.innerHTML = '';
+
+  if (rotuloTodos) {
+    const todos = document.createElement('option');
+    todos.value = TODOS;
+    todos.textContent = rotuloTodos;
+    select.appendChild(todos);
   }
 
-  /* ===================================================================
-   * 4. FORMULÁRIO: ERROS NA TELA E ENVIO
-   * =================================================================== */
-
-  function iniciar() {
-    const form = document.getElementById(IDS.formulario);
-    if (!form) return; // página sem o formulário: não faz nada
-
-    const tabela = prepararTabela();
-    if (!tabela) return;
-    const demandas = tabela.demandas;
-    const linhaVazia = tabela.linhaVazia;
-
-    // Desliga as mensagens padrão do navegador para usar as nossas.
-    form.noValidate = true;
-
-    const chaves = Object.keys(IDS.campos);
-    const campos = {};
-    chaves.forEach(function (chave) {
-      campos[chave] = document.getElementById(IDS.campos[chave]);
-    });
-
-    const resumo = document.getElementById(IDS.resumoErros);
-    const contagem = document.getElementById(IDS.contagem);
-
-    /* ---- Filtro de Responsável: montado com os nomes da tabela ---- */
-    const nomes = listarResponsaveis(demandas);
-    if (campos.responsavel) {
-      nomes.forEach(function (nome) {
-        const opcao = document.createElement('option');
-        opcao.value = nome;
-        opcao.textContent = nome;
-        campos.responsavel.appendChild(opcao);
-      });
-    }
-    REGRAS.responsavel = nomes; // a validação só aceita esses nomes
-
-    /* ---- Aplicação dos filtros na tabela ---- */
-    function mostrarResultado(visiveis) {
-      linhaVazia.hidden = visiveis > 0;
-      if (contagem) {
-        contagem.textContent = 'Exibindo ' + visiveis + ' de ' + demandas.length +
-          (demandas.length === 1 ? ' demanda.' : ' demandas.');
-      }
-    }
-
-    /** Todos os filtros preenchidos precisam combinar (E lógico). */
-    function aplicarFiltros(f) {
-      const termo = normalizar(f.busca);
-      let visiveis = 0;
-
-      demandas.forEach(function (d) {
-        const combina =
-          (termo === '' || normalizar(d.titulo + ' ' + d.descricao).indexOf(termo) !== -1) &&
-          (f.status === '' || d.status === f.status) &&
-          (f.prioridade === '' || d.prioridade === f.prioridade) &&
-          (f.tipo === '' || d.tipo === f.tipo) &&
-          (f.responsavel === '' || d.responsavel === f.responsavel);
-
-        d.tr.hidden = !combina;
-        if (combina) visiveis++;
-      });
-
-      mostrarResultado(visiveis);
-    }
-
-    /* ---- Mensagens de erro na tela ---- */
-
-    /** Encontra (ou cria) o <span> que exibe o erro de um campo. */
-    function obterElementoErro(campo) {
-      let el = document.querySelector('[data-erro-para="' + campo.id + '"]');
-      if (!el) {
-        el = document.createElement('span');
-        el.className = 'mensagem-erro';
-        el.setAttribute('data-erro-para', campo.id);
-        campo.insertAdjacentElement('afterend', el);
-      }
-      if (!el.id) el.id = 'erro-' + campo.id;
-      el.hidden = true;
-      return el;
-    }
-
-    // Liga cada campo ao seu elemento de erro (leitores de tela).
-    chaves.forEach(function (chave) {
-      const campo = campos[chave];
-      if (!campo) return;
-      const el = obterElementoErro(campo);
-      campo.setAttribute('aria-describedby', el.id);
-    });
-
-    function lerValores() {
-      const v = {};
-      chaves.forEach(function (chave) {
-        v[chave] = campos[chave] ? campos[chave].value : '';
-      });
-      return v;
-    }
-
-    function mostrarErro(chave, mensagem) {
-      const campo = campos[chave];
-      if (!campo) return;
-      const el = document.querySelector('[data-erro-para="' + campo.id + '"]');
-      if (mensagem) {
-        campo.setAttribute('aria-invalid', 'true');
-        campo.classList.add('invalido');
-        el.textContent = mensagem;
-        el.hidden = false;
-      } else {
-        campo.removeAttribute('aria-invalid');
-        campo.classList.remove('invalido');
-        el.textContent = '';
-        el.hidden = true;
-      }
-    }
-
-    function atualizarResumo(quantidade) {
-      if (!resumo) return;
-      if (quantidade === 0) {
-        resumo.textContent = '';
-        resumo.hidden = true;
-        return;
-      }
-      resumo.textContent = quantidade === 1
-        ? 'Corrija 1 campo antes de filtrar.'
-        : 'Corrija ' + quantidade + ' campos antes de filtrar.';
-      resumo.hidden = false;
-    }
-
-    /** Valida tudo, mas só exibe o erro dos campos listados. */
-    function validarEExibir(chavesParaExibir) {
-      const resultado = validarFiltros(lerValores());
-      chavesParaExibir.forEach(function (chave) {
-        mostrarErro(chave, resultado.erros[chave] || '');
-      });
-      return resultado;
-    }
-
-    /* ---- Validação ao trocar um select ---- */
-    ['status', 'prioridade', 'tipo', 'responsavel'].forEach(function (chave) {
-      if (campos[chave]) {
-        campos[chave].addEventListener('change', function () {
-          validarEExibir([chave]);
-        });
-      }
-    });
-
-    /* ---- Validação da busca ao sair do campo ---- */
-    if (campos.busca) {
-      campos.busca.addEventListener('blur', function () {
-        validarEExibir(['busca']);
-      });
-      // Se já estava com erro, revalida a cada tecla para o erro sumir
-      // assim que o usuário corrigir.
-      campos.busca.addEventListener('input', function () {
-        if (campos.busca.classList.contains('invalido')) {
-          validarEExibir(['busca']);
-        }
-      });
-    }
-
-    /* ---- Envio do formulário ---- */
-    form.addEventListener('submit', function (evento) {
-      // Sempre interrompe o envio padrão; só filtramos se estiver válido.
-      evento.preventDefault();
-
-      const resultado = validarEExibir(chaves);
-      atualizarResumo(Object.keys(resultado.erros).length);
-
-      if (!resultado.valido) {
-        // Foco no primeiro campo inválido, na ordem de IDS.campos.
-        for (let i = 0; i < chaves.length; i++) {
-          if (resultado.erros[chaves[i]] && campos[chaves[i]]) {
-            campos[chaves[i]].focus();
-            break;
-          }
-        }
-        return; // bloqueado enquanto houver dado inválido
-      }
-
-      // Tudo certo: normaliza o texto da busca e filtra a tabela.
-      const valores = lerValores();
-      valores.busca = valores.busca.trim();
-      if (campos.busca) campos.busca.value = valores.busca;
-      aplicarFiltros(valores);
-    });
-
-    /* ---- Botão "Limpar" ---- */
-    const botaoLimpar = document.getElementById(IDS.botaoLimpar);
-    if (botaoLimpar) {
-      botaoLimpar.addEventListener('click', function () {
-        form.reset();
-        chaves.forEach(function (chave) { mostrarErro(chave, ''); });
-        atualizarResumo(0);
-        aplicarFiltros({ busca: '', status: '', prioridade: '', tipo: '', responsavel: '' });
-        if (campos.busca) campos.busca.focus();
-      });
-    }
-
-    mostrarResultado(demandas.length); // estado inicial: tudo visível
-  }
-
-  /* ===================================================================
-   * 5. INICIALIZAÇÃO E EXPORTAÇÃO
-   * =================================================================== */
-
-  // Permite testar as regras no Node: require('./listagem.js').
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-      REGRAS: REGRAS,
-      validarBusca: validarBusca,
-      validarTipo: validarTipo,
-      validarPrioridade: validarPrioridade,
-      validarStatus: validarStatus,
-      validarResponsavel: validarResponsavel,
-      validarFiltros: validarFiltros
-    };
-  }
-
-  if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', iniciar);
+  opcoes.forEach(function (opcao) {
+    const item = document.createElement('option');
+    if (typeof opcao === 'string') {
+      item.value = opcao;
+      item.textContent = opcao;
     } else {
-      iniciar();
+      item.value = opcao.valor;
+      item.textContent = opcao.texto;
     }
+    select.appendChild(item);
+  });
+}
+
+/* Redesenha a tabela a cada mudanca de filtro, sem precisar clicar em botao. */
+function ligarEventos() {
+  const filtros = ['filtro-busca', 'filtro-status', 'filtro-prioridade',
+                   'filtro-tipo', 'filtro-responsavel', 'filtro-projeto', 'filtro-ordem'];
+
+  filtros.forEach(function (id) {
+    const campo = document.getElementById(id);
+    campo.addEventListener('input', desenharTabela);
+    campo.addEventListener('change', desenharTabela);
+  });
+
+  document.getElementById('botao-limpar').addEventListener('click', function () {
+    filtros.forEach(function (id) {
+      const campo = document.getElementById(id);
+      if (id !== 'filtro-ordem') {
+        campo.value = TODOS;
+      }
+    });
+    document.getElementById('filtro-ordem').value = 'prioridade';
+    desenharTabela();
+  });
+}
+
+/* Aplica todos os filtros e a busca textual sobre as demandas visiveis. */
+function filtrarDemandas() {
+  const busca = buscaValidada();
+  const status = document.getElementById('filtro-status').value;
+  const prioridade = document.getElementById('filtro-prioridade').value;
+  const tipo = document.getElementById('filtro-tipo').value;
+  const responsavel = document.getElementById('filtro-responsavel').value;
+  const projeto = document.getElementById('filtro-projeto').value;
+
+  return demandasDoUsuario.filter(function (demanda) {
+    if (status !== TODOS && demanda.status !== status) {
+      return false;
+    }
+    if (prioridade !== TODOS && demanda.prioridade !== prioridade) {
+      return false;
+    }
+    if (tipo !== TODOS && demanda.tipo !== tipo) {
+      return false;
+    }
+    if (projeto !== TODOS && demanda.projetoId !== Number(projeto)) {
+      return false;
+    }
+
+    if (responsavel !== TODOS) {
+      const ids = demanda.responsaveisIds || [];
+      if (responsavel === 'sem') {
+        if (ids.length > 0) {
+          return false;
+        }
+      } else if (ids.indexOf(Number(responsavel)) < 0) {
+        return false;
+      }
+    }
+
+    // Busca textual por titulo ou descricao.
+    if (busca) {
+      const texto = (demanda.titulo + ' ' + demanda.descricao).toLowerCase();
+      if (texto.indexOf(busca) < 0) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+/*
+ * Valida o texto digitado na busca antes de usa-lo como filtro (ver js/validacoes.js).
+ * Enquanto o texto estiver invalido a mensagem aparece abaixo do campo e a busca
+ * nao e aplicada, de modo que a tabela continua respeitando os demais filtros.
+ */
+function buscaValidada() {
+  const campo = document.getElementById('filtro-busca');
+  const mensagem = validarBusca(campo.value);
+
+  mostrarErroBusca(campo, mensagem);
+
+  return mensagem === '' ? campo.value.trim().toLowerCase() : '';
+}
+
+/* Cria uma unica vez, e mantem atualizada, a mensagem de erro do campo de busca. */
+function mostrarErroBusca(campo, mensagem) {
+  let erro = document.getElementById('erro-filtro-busca');
+
+  if (!erro) {
+    erro = document.createElement('span');
+    erro.className = 'mensagem-erro';
+    erro.id = 'erro-filtro-busca';
+    erro.hidden = true;
+    campo.insertAdjacentElement('afterend', erro);
+    // Liga o campo a mensagem para os leitores de tela.
+    campo.setAttribute('aria-describedby', erro.id);
   }
-})();
+
+  if (mensagem) {
+    campo.classList.add('invalido');
+    campo.setAttribute('aria-invalid', 'true');
+    erro.textContent = mensagem;
+    erro.hidden = false;
+  } else {
+    campo.classList.remove('invalido');
+    campo.removeAttribute('aria-invalid');
+    erro.textContent = '';
+    erro.hidden = true;
+  }
+}
+
+
+/*
+ * Ordena a lista conforme o criterio escolhido.
+ * Prioridade e status seguem a ordem logica do negocio, e nao a ordem alfabetica.
+ */
+function ordenarDemandas(demandas) {
+  const criterio = document.getElementById('filtro-ordem').value;
+  const ordemStatus = [STATUS.ABERTA, STATUS.ANDAMENTO, STATUS.REVISAO, STATUS.CONCLUIDA, STATUS.CANCELADA];
+
+  return demandas.slice().sort(function (a, b) {
+    if (criterio === 'prioridade') {
+      return PRIORIDADES.indexOf(a.prioridade) - PRIORIDADES.indexOf(b.prioridade);
+    }
+    if (criterio === 'status') {
+      return ordemStatus.indexOf(a.status) - ordemStatus.indexOf(b.status);
+    }
+    if (criterio === 'prazo') {
+      // Demandas sem prazo vao para o fim da lista.
+      if (!a.prazo) { return 1; }
+      if (!b.prazo) { return -1; }
+      return a.prazo.localeCompare(b.prazo);
+    }
+    // Data de criacao: da mais recente para a mais antiga.
+    return String(b.dataCriacao).localeCompare(String(a.dataCriacao));
+  });
+}
+
+
+/* ==========================================================================
+   Desenho da tabela
+   ========================================================================== */
+
+function desenharTabela() {
+  const corpo = document.getElementById('corpo-tabela');
+  const demandas = ordenarDemandas(filtrarDemandas());
+
+  corpo.innerHTML = '';
+
+  atualizarContador(demandas.length);
+
+  if (demandas.length === 0) {
+    corpo.appendChild(linhaVazia());
+    return;
+  }
+
+  demandas.forEach(function (demanda) {
+    corpo.appendChild(montarLinha(demanda));
+  });
+}
+
+/* Informa quantas demandas estao sendo exibidas em relacao ao total visivel. */
+function atualizarContador(exibidas) {
+  const total = demandasDoUsuario.length;
+  const contador = document.getElementById('contador-resultados');
+
+  if (total === 0) {
+    contador.textContent = 'Nenhuma demanda disponivel para o seu perfil.';
+  } else if (exibidas === total) {
+    contador.textContent = 'Exibindo ' + total + (total === 1 ? ' demanda.' : ' demandas.');
+  } else {
+    contador.textContent = 'Exibindo ' + exibidas + ' de ' + total + ' demandas.';
+  }
+}
+
+/* Linha unica exibida quando nenhuma demanda atende aos filtros. */
+function linhaVazia() {
+  const linha = document.createElement('tr');
+  linha.className = 'linha-vazia';
+
+  const celula = document.createElement('td');
+  celula.colSpan = 9;
+  celula.textContent = demandasDoUsuario.length === 0
+    ? 'Voce ainda nao tem demandas nos projetos aos quais esta vinculado.'
+    : 'Nenhuma demanda encontrada com os filtros aplicados.';
+
+  linha.appendChild(celula);
+  return linha;
+}
+
+/* Monta uma linha da tabela com os dados principais da demanda. */
+function montarLinha(demanda) {
+  const linha = document.createElement('tr');
+  const projeto = buscarProjeto(demanda.projetoId);
+
+  linha.appendChild(celulaTexto(demanda.titulo));
+  linha.appendChild(celulaTexto(demanda.tipo));
+  linha.appendChild(celulaEtiqueta(demanda.prioridade));
+  linha.appendChild(celulaEtiqueta(demanda.status));
+  linha.appendChild(celulaTexto(projeto ? projeto.nome : '-'));
+
+  const celulaResponsaveis = celulaTexto(nomesUsuarios(demanda.responsaveisIds));
+  celulaResponsaveis.className = 'coluna-responsaveis';
+  linha.appendChild(celulaResponsaveis);
+
+  linha.appendChild(celulaTexto(formatarData(demanda.dataCriacao)));
+  linha.appendChild(celulaTexto(demanda.prazo ? formatarData(demanda.prazo) : '-'));
+
+  // O link leva para a tela de edicao, que aplica as permissoes do perfil.
+  const acoes = document.createElement('td');
+  const link = document.createElement('a');
+  link.className = 'link-detalhes';
+  link.href = 'demanda.html?id=' + demanda.id;
+  link.textContent = 'Ver detalhes';
+  acoes.appendChild(link);
+  linha.appendChild(acoes);
+
+  return linha;
+}
+
+function celulaTexto(texto) {
+  const celula = document.createElement('td');
+  // textContent evita que o conteudo cadastrado seja interpretado como HTML.
+  celula.textContent = texto;
+  return celula;
+}
+
+function celulaEtiqueta(valor) {
+  const celula = document.createElement('td');
+  celula.appendChild(criarEtiqueta(valor));
+  return celula;
+}

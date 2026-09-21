@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <!--
-    Arquivo : listagem.html
-    Autor   : Nathan Kenzo Puzipe (Japa)
-    Projeto : PI2 – DemandaTrack (Sistema de Acompanhamento de Demandas)
-    Etapa   : Reunião 3 – listagem com filtros validados em JavaScript
-
-    Alterações da Reunião 3 em relação à Reunião 2:
-      - Os campos "simulados" dos filtros viraram campos reais
-        (input/select) dentro de um <form>.
-      - Cada linha da tabela ganhou data-descricao, usado na busca.
-      - Foram incluídos o texto de contagem e o script ../js/listagem.js.
+  Autor da estrutura e do layout: Nathan Kenzo Puzipe
+  Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
+  Descricao: Tela de listagem de demandas. Os filtros e a tabela sao preenchidos
+             em tempo de execucao pelo arquivo js/listagem.js.
 -->
 <html lang="pt-BR">
 
@@ -21,6 +15,7 @@
     <title>DemandaTrack - Demandas</title>
 
     <link rel="stylesheet" href="../css/listagem.css">
+    <link rel="stylesheet" href="../css/simulacao.css">
 
 </head>
 
@@ -36,163 +31,98 @@
             <a href="login.html" class="item-menu">Login</a>
             <a href="dashboard.html" class="item-menu">Dashboard</a>
             <div class="item-menu item-menu-ativo">Demandas</div>
-            <div class="item-menu">Nova Demanda</div>
+            <a href="demanda.html" class="item-menu">Nova Demanda</a>
         </div>
 
     </div>
 
+    <!-- Barra temporaria de simulacao de perfil (ver js/simulacao.js) -->
+    <div id="barra-simulacao"></div>
+
 
     <div class="conteudo">
 
-        <h1>Demandas</h1>
+        <div class="topo-pagina">
+            <div>
+                <h1>Demandas</h1>
+                <p class="subtitulo" id="subtitulo-listagem">
+                    Lista de todas as demandas cadastradas no sistema
+                </p>
+            </div>
+            <!-- Botao exibido apenas para os perfis que podem criar demandas -->
+            <a href="demanda.html" class="botao-nova-demanda oculto" id="botao-nova-demanda">
+                + Nova demanda
+            </a>
+        </div>
 
-        <p class="subtitulo">
-            Lista de todas as demandas cadastradas no sistema
-        </p>
 
+        <div class="caixa-filtros">
 
-        <!-- Filtros: agora um formulário real, validado por listagem.js -->
-        <form class="caixa-filtros" id="form-filtros" action="#" method="get" novalidate>
-
-            <!-- Aviso geral: só aparece quando o envio é bloqueado -->
-            <div id="resumo-erros" class="resumo-erros" role="alert" hidden></div>
-
-            <div class="campo-filtro campo-filtro-busca">
+            <div class="campo-filtro">
                 <label class="rotulo" for="filtro-busca">Buscar</label>
-                <input type="search" id="filtro-busca" name="busca" class="campo-entrada"
-                       placeholder="Título ou descrição" autocomplete="off">
-                <span class="mensagem-erro" data-erro-para="filtro-busca" hidden></span>
+                <input type="text" id="filtro-busca" class="campo-entrada"
+                       placeholder="Titulo ou descricao">
             </div>
 
             <div class="campo-filtro">
                 <label class="rotulo" for="filtro-status">Status</label>
-                <select id="filtro-status" name="status" class="campo-entrada">
-                    <option value="">Todos</option>
-                    <option value="Aberta">Aberta</option>
-                    <option value="Em andamento">Em andamento</option>
-                    <option value="Em revisão">Em revisão</option>
-                    <option value="Concluída">Concluída</option>
-                    <option value="Cancelada">Cancelada</option>
-                </select>
-                <span class="mensagem-erro" data-erro-para="filtro-status" hidden></span>
+                <select id="filtro-status" class="campo-entrada"></select>
             </div>
 
             <div class="campo-filtro">
                 <label class="rotulo" for="filtro-prioridade">Prioridade</label>
-                <select id="filtro-prioridade" name="prioridade" class="campo-entrada">
-                    <option value="">Todas</option>
-                    <option value="Crítica">Crítica</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Média">Média</option>
-                    <option value="Baixa">Baixa</option>
-                </select>
-                <span class="mensagem-erro" data-erro-para="filtro-prioridade" hidden></span>
+                <select id="filtro-prioridade" class="campo-entrada"></select>
             </div>
 
             <div class="campo-filtro">
                 <label class="rotulo" for="filtro-tipo">Tipo</label>
-                <select id="filtro-tipo" name="tipo" class="campo-entrada">
-                    <option value="">Todos</option>
-                    <option value="Tarefa">Tarefa</option>
-                    <option value="Defeito">Defeito</option>
-                    <option value="Melhoria">Melhoria</option>
-                    <option value="Documentação">Documentação</option>
-                </select>
-                <span class="mensagem-erro" data-erro-para="filtro-tipo" hidden></span>
+                <select id="filtro-tipo" class="campo-entrada"></select>
             </div>
 
             <div class="campo-filtro">
-                <label class="rotulo" for="filtro-responsavel">Responsável</label>
-                <!-- As opções são preenchidas por listagem.js com os nomes da tabela -->
-                <select id="filtro-responsavel" name="responsavel" class="campo-entrada">
-                    <option value="">Todos</option>
-                </select>
-                <span class="mensagem-erro" data-erro-para="filtro-responsavel" hidden></span>
+                <label class="rotulo" for="filtro-responsavel">Responsavel</label>
+                <select id="filtro-responsavel" class="campo-entrada"></select>
             </div>
 
-            <button type="submit" class="botao-filtrar">Filtrar</button>
-            <button type="button" id="btn-limpar" class="botao-limpar">Limpar</button>
+            <div class="campo-filtro">
+                <label class="rotulo" for="filtro-projeto">Projeto</label>
+                <select id="filtro-projeto" class="campo-entrada"></select>
+            </div>
 
-        </form>
+            <div class="campo-filtro">
+                <label class="rotulo" for="filtro-ordem">Ordenar por</label>
+                <select id="filtro-ordem" class="campo-entrada"></select>
+            </div>
+
+            <button type="button" class="botao-filtrar" id="botao-limpar">
+                <strong>Limpar filtros</strong>
+            </button>
+
+        </div>
 
 
         <div class="caixa-tabela">
 
-            <p id="contagem" class="contagem" aria-live="polite"></p>
+            <p class="contador-resultados" id="contador-resultados"></p>
 
             <table class="tabela-demandas" border="0">
 
-                <tr class="linha-cabecalho">
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Prioridade</th>
-                    <th>Status</th>
-                    <th>Projeto</th>
-                    <th>Responsável</th>
-                    <th>Criação</th>
-                    <th>Prazo</th>
-                    <th></th>
-                </tr>
+                <thead>
+                    <tr class="linha-cabecalho">
+                        <th>Titulo</th>
+                        <th>Tipo</th>
+                        <th>Prioridade</th>
+                        <th>Status</th>
+                        <th>Projeto</th>
+                        <th>Responsaveis</th>
+                        <th>Criacao</th>
+                        <th>Prazo</th>
+                        <th></th>
+                    </tr>
+                </thead>
 
-                <tr data-descricao="Usuário não consegue entrar mesmo com e-mail e senha corretos.">
-                    <td>Corrigir erro no login</td>
-                    <td>Defeito</td>
-                    <td><div class="etiqueta etiqueta-critica">Crítica</div></td>
-                    <td><div class="etiqueta etiqueta-aberta">Aberta</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>20/08/2026</td>
-                    <td>29/08/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr data-descricao="Desenvolver a tela com o resumo das demandas por status e prioridade.">
-                    <td>Criar tela de dashboard</td>
-                    <td>Tarefa</td>
-                    <td><div class="etiqueta etiqueta-alta">Alta</div></td>
-                    <td><div class="etiqueta etiqueta-andamento">Em andamento</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>21/08/2026</td>
-                    <td>02/09/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr data-descricao="Descrever endpoints, parâmetros e respostas da API.">
-                    <td>Documentar rotas da API</td>
-                    <td>Documentação</td>
-                    <td><div class="etiqueta etiqueta-media">Média</div></td>
-                    <td><div class="etiqueta etiqueta-revisao">Em revisão</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>22/08/2026</td>
-                    <td>05/09/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr data-descricao="Corrigir o espaçamento entre os itens do menu superior.">
-                    <td>Ajustar espaçamento do menu</td>
-                    <td>Melhoria</td>
-                    <td><div class="etiqueta etiqueta-baixa">Baixa</div></td>
-                    <td><div class="etiqueta etiqueta-concluida">Concluída</div></td>
-                    <td>DemandaTrack</td>
-                    <td>Exemplo</td>
-                    <td>18/08/2026</td>
-                    <td>25/08/2026</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
-
-                <tr data-descricao="O sistema permite criar dois usuários com o mesmo e-mail.">
-                    <td>Cadastro duplicado de usuário</td>
-                    <td>Defeito</td>
-                    <td><div class="etiqueta etiqueta-alta">Alta</div></td>
-                    <td><div class="etiqueta etiqueta-cancelada">Cancelada</div></td>
-                    <td>DemandaTrack</td>
-                    <td>-</td>
-                    <td>15/08/2026</td>
-                    <td>-</td>
-                    <td><a href="#" class="link-detalhes">Ver detalhes</a></td>
-                </tr>
+                <!-- As linhas sao geradas por js/listagem.js a partir das demandas -->
+                <tbody id="corpo-tabela"></tbody>
 
             </table>
 
@@ -200,7 +130,11 @@
 
     </div>
 
-    <!-- Validações dos filtros + filtragem da tabela (arquivo único) -->
+    <script src="../js/dados.js"></script>
+    <script src="../js/permissoes.js"></script>
+    <script src="../js/formato.js"></script>
+    <script src="../js/validacoes.js"></script>
+    <script src="../js/simulacao.js"></script>
     <script src="../js/listagem.js"></script>
 
 </body>

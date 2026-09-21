@@ -171,13 +171,38 @@ cadastro ou a atualização do prazo.
 
 ```
 PI-II-Time2/
+├── css/                   # Estilos de cada tela
+│   ├── cadastro.css
+│   ├── dashboard.css
+│   ├── demanda.css
+│   ├── listagem.css
+│   ├── login.css
+│   └── simulacao.css
+├── js/                    # Comportamento, validações e dados simulados
+│   ├── dados.js           # Massa de dados para testes sem backend
+│   ├── dashboard.js       # Indicadores da tela inicial
+│   ├── demanda.js         # Cadastro e edição de demanda
+│   ├── formato.js         # Funções de formatação reutilizáveis
+│   ├── listagem.js        # Filtros, busca e ordenação
+│   ├── permissoes.js      # Regras de acesso por perfil
+│   ├── simulacao.js       # Troca de perfil para demonstração
+│   ├── validacoes.js      # Regras de validação de demandas e de filtros
+│   └── validacoes.test.js # Autoteste das regras de validação
+├── pages/                 # Telas do sistema
+│   ├── cadastro.html
+│   ├── dashboard.html
+│   ├── demanda.html
+│   ├── listagem.html
+│   └── login.html
 ├── docs/
 │   └── reunioes/          # Documento de visão, cronograma e atas de reunião
+├── index.html             # Ponto de entrada
 ├── .gitignore
 └── README.md
 ```
 
-> A estrutura de `backend/`, `frontend/` e `database/` será adicionada conforme
+> O frontend está em desenvolvimento com dados simulados em `js/dados.js`.
+> A estrutura de `backend/` e `database/` será adicionada conforme
 > o desenvolvimento avançar.
 
 ---
@@ -197,10 +222,25 @@ git clone https://github.com/Nathan-Kenzo/PI-II-Time2.git
 cd PI-II-Time2
 ```
 
+### Executando o frontend
+
+Nesta etapa o projeto é composto apenas por arquivos estáticos e funciona com
+dados simulados, sem necessidade de servidor ou banco de dados. Basta abrir o
+arquivo `index.html` no navegador.
+
+### Rodando o autoteste das validações
+
+As regras de validação têm um autoteste que roda no Node, sem navegador e sem
+biblioteca de teste. Ele falha se alguma regra deixar de valer:
+
+```bash
+node js/validacoes.test.js
+```
+
 > [!NOTE]
 > As instruções de instalação de dependências, configuração do banco de dados,
-> variáveis de ambiente e execução do backend e do frontend serão documentadas
-> nesta seção conforme cada parte do sistema for implementada.
+> variáveis de ambiente e execução do backend serão documentadas nesta seção
+> conforme cada parte do sistema for implementada.
 
 ---
 
@@ -242,12 +282,12 @@ Reuniões de acompanhamento às **segundas-feiras, às 07:10h**:
 
 | # | Data | Status |
 |:-:|---|---|
-| 1 | 17/08 | ✅ Realizada |
-| 2 | 31/08 | ⏳ Agendada |
-| 3 | 21/09 | ⏳ Agendada |
-| 4 | 05/10 | ⏳ Agendada |
-| 5 | 26/10 | ⏳ Agendada |
-| 6 | 16/11 | ⏳ Agendada |
+| 1 | 17/08/2026 | ✅ Realizada |
+| 2 | 31/08/2026 | ✅ Realizada |
+| 3 | 21/09/2026 | 📍 Próxima reunião |
+| 4 | 05/10/2026 | ⏳ Agendada |
+| 5 | 26/10/2026 | ⏳ Agendada |
+| 6 | 16/11/2026 | ⏳ Agendada |
 
 ---
 
@@ -290,21 +330,27 @@ comentários explicativos sobre o código.
 
 ## Status do Projeto
 
-🟡 **Em desenvolvimento** — ambiente de trabalho configurado.
+🟡 **Em desenvolvimento** — telas do frontend em construção com dados simulados.
 
 - [x] Criação do repositório no GitHub
 - [x] Inclusão dos integrantes e da professora orientadora
 - [x] Configuração inicial do GitHub Projects
 - [x] Criação e organização do `README.md`
 - [x] Configuração e teste do ambiente Git/GitHub pelos integrantes
+- [x] Telas de login e cadastro de usuário
+- [x] Tela de dashboard com indicadores
+- [x] Tela de listagem com filtros, busca e ordenação
+- [x] Tela de demanda e simulação de perfis de acesso
 - [ ] Modelagem do banco de dados
 - [ ] Implementação da API (backend)
-- [ ] Implementação da interface (frontend)
+- [ ] Integração do frontend com a API
+- [ ] Validação de prazo pela API de feriados
 - [ ] Integração e testes
 - [ ] Release final `1.0.0-final`
 
 ---
 
 <p align="center">
-  Desenvolvido pelo <strong>Time 2</strong> — Projeto Integrador II · PUC-Campinas · 2026
+  Desenvolvido pelo <strong>Time 2</strong> — Projeto Integrador II · PUC-Campinas · 2026<br>
+  <sub>Última atualização deste documento: 20/09/2026</sub>
 </p>

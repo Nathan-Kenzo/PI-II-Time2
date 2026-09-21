@@ -1,269 +1,300 @@
 /**
- * Autor: [Felipe Oliveira Barbosa]
+ * Autor: Pedro Tiezo Sales Shimizu
+ * Descricao: Calculo dos indicadores da tela inicial (pages/dashboard.html).
+ *
+ * Todos os numeros sao apurados a partir das demandas que o usuario logado pode
+ * enxergar, de modo que o Administrador ve o total do sistema e os demais perfis
+ * veem apenas os projetos aos quais estao vinculados.
+ *
+ * Indicadores obrigatorios do item 2.4 do documento de visao.
  */
 
-// Valores aceitos pelo escopo do sistema
-const TIPOS = ["Tarefa", "Defeito", "Melhoria", "Documentação"];
-const PRIORIDADES = ["Crítica", "Alta", "Média", "Baixa"];
-const STATUS = ["Aberta", "Em andamento", "Em revisão", "Concluída", "Cancelada"];
-
-// Classes do CSS (selos coloridos) para cada status e prioridade
-const CLASSE_STATUS = {
-  "Aberta": "selo-aberta",
-  "Em andamento": "selo-andamento",
-  "Em revisão": "selo-revisao",
-  "Concluída": "selo-concluida",
-  "Cancelada": "selo-cancelada"
-};
-
-const CLASSE_PRIORIDADE = {
-  "Crítica": "selo-critica",
-  "Alta": "selo-alta",
-  "Média": "selo-media",
-  "Baixa": "selo-baixa"
-};
-
-// Quantos dias à frente uma demanda entra em "próximas do prazo"
-const DIAS_ALERTA = 7;
+/* Quantos dias antes do prazo a demanda ja entra em "proxima do prazo". */
+const DIAS_PROXIMO_DO_PRAZO = 15;
 
 
-const demandas = [
-  { titulo: "Corrigir erro no login", tipo: "Defeito", prioridade: "Crítica", status: "Aberta", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-25" },
-  { titulo: "Falha ao salvar demanda", tipo: "Defeito", prioridade: "Crítica", status: "Em andamento", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-22" },
-  { titulo: "Criar tela de dashboard", tipo: "Tarefa", prioridade: "Alta", status: "Em andamento", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-24" },
-  { titulo: "Documentar rotas da API", tipo: "Documentação", prioridade: "Média", status: "Em revisão", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-30" },
-  { titulo: "Ajustar espaçamento do menu", tipo: "Melhoria", prioridade: "Baixa", status: "Concluída", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-08-25" },
-  { titulo: "Cadastro duplicado de usuário", tipo: "Defeito", prioridade: "Alta", status: "Cancelada", projeto: "DemandaTrack", responsavel: "", prazo: "" }
+document.addEventListener('DOMContentLoaded', function () {
+  const usuario = usuarioLogado();
 
-  // Para testar uma demanda inválida, tire o comentário da linha abaixo:
-  // , { titulo: "", tipo: "Bug", prioridade: "Urgente", status: "Aberta", projeto: "DemandaTrack", responsavel: "", prazo: "2026-02-31" }
-];
+  /*
+   * Demandas com dados invalidos nao entram nas contagens, para que um registro
+   * defeituoso nao distorca os indicadores. Ver js/validacoes.js.
+   */
+  const conferencia = separarDemandasValidas(demandasVisiveis(usuario));
+  const demandas = conferencia.validas;
 
+  avisarDemandasInvalidas(conferencia.invalidas);
+  atualizarSubtitulo(usuario);
+  contarPorStatus(demandas);
+  desenharBarrasDePrioridade(demandas);
+  desenharBarrasDeTipo(demandas);
+  listarCriticasEmAberto(demandas);
+  listarProximasDoPrazo(demandas);
+});
 
-// ---------- Validações ----------
-
-// Confere se o texto é uma data real no formato AAAA-MM-DD
-function dataValida(texto) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
-    return false;
+/* Avisa na tela quantas demandas ficaram de fora do resumo por terem dados invalidos. */
+function avisarDemandasInvalidas(quantidade) {
+  const aviso = document.getElementById('aviso-dados');
+  if (!aviso || quantidade === 0) {
+    return;
   }
-
-  const partes = texto.split("-");
-  const ano = Number(partes[0]);
-  const mes = Number(partes[1]);
-  const dia = Number(partes[2]);
-
-  // se o dia não existir no mês (ex: 31/02), o Date "corrige" e os valores mudam
-  const data = new Date(ano, mes - 1, dia);
-  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+  aviso.textContent = quantidade === 1
+    ? '1 demanda com dados invalidos foi ignorada no resumo.'
+    : quantidade + ' demandas com dados invalidos foram ignoradas no resumo.';
+  aviso.hidden = false;
 }
 
-// Devolve a lista de erros da demanda (lista vazia = demanda válida)
-function validarDemanda(demanda) {
-  const erros = [];
-
-  if (typeof demanda.titulo !== "string" || demanda.titulo.trim() === "") {
-    erros.push("título vazio");
+/* Deixa claro se os numeros sao do sistema inteiro ou apenas dos projetos do usuario. */
+function atualizarSubtitulo(usuario) {
+  const subtitulo = document.querySelector('.subtitulo-pagina');
+  if (!subtitulo) {
+    return;
   }
-  if (!TIPOS.includes(demanda.tipo)) {
-    erros.push("tipo inválido (" + demanda.tipo + ")");
-  }
-  if (!PRIORIDADES.includes(demanda.prioridade)) {
-    erros.push("prioridade inválida (" + demanda.prioridade + ")");
-  }
-  if (!STATUS.includes(demanda.status)) {
-    erros.push("status inválido (" + demanda.status + ")");
-  }
-  if (typeof demanda.projeto !== "string" || demanda.projeto.trim() === "") {
-    erros.push("projeto vazio");
-  }
-
-  // o prazo é opcional, mas se vier preenchido tem que ser uma data real
-  if (demanda.prazo && !dataValida(demanda.prazo)) {
-    erros.push("prazo inválido (" + demanda.prazo + ")");
-  }
-
-  return erros;
+  subtitulo.textContent = usuario.perfil === PERFIS.ADMIN
+    ? 'Resumo geral das demandas cadastradas no sistema'
+    : 'Resumo das demandas dos projetos aos quais voce esta vinculado';
 }
 
 
-// ---------- Funções de apoio ----------
+/* ==========================================================================
+   Total de demandas e contagem por status
+   ========================================================================== */
 
-function converterData(texto) {
-  const partes = texto.split("-");
-  return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+function contarPorStatus(demandas) {
+  escrever('metrica-total', demandas.length);
+  escrever('metrica-aberta', contar(demandas, 'status', STATUS.ABERTA));
+  escrever('metrica-andamento', contar(demandas, 'status', STATUS.ANDAMENTO));
+  escrever('metrica-revisao', contar(demandas, 'status', STATUS.REVISAO));
+  escrever('metrica-concluida', contar(demandas, 'status', STATUS.CONCLUIDA));
+  escrever('metrica-cancelada', contar(demandas, 'status', STATUS.CANCELADA));
 }
 
-// "2026-09-25" vira "25/09/2026"
-function formatarData(texto) {
-  const partes = texto.split("-");
-  return partes[2] + "/" + partes[1] + "/" + partes[0];
+/* Quantas demandas possuem determinado valor em um campo. */
+function contar(demandas, campo, valor) {
+  return demandas.filter(function (demanda) { return demanda[campo] === valor; }).length;
 }
 
-function contar(lista, campo, valor) {
-  return lista.filter(function (demanda) {
-    return demanda[campo] === valor;
-  }).length;
-}
-
-// Em aberto = ainda não foi concluída nem cancelada
-function estaEmAberto(demanda) {
-  return demanda.status !== "Concluída" && demanda.status !== "Cancelada";
+function escrever(id, valor) {
+  const elemento = document.getElementById(id);
+  if (elemento) {
+    elemento.textContent = valor;
+  }
 }
 
 
-// ---------- Preenchimento da tela ----------
+/* ==========================================================================
+   Barras de prioridade e de tipo
+   ========================================================================== */
 
-function preencherNumeros(lista) {
-  document.getElementById("num-total").textContent = lista.length;
-  document.getElementById("num-abertas").textContent = contar(lista, "status", "Aberta");
-  document.getElementById("num-andamento").textContent = contar(lista, "status", "Em andamento");
-  document.getElementById("num-revisao").textContent = contar(lista, "status", "Em revisão");
-  document.getElementById("num-concluidas").textContent = contar(lista, "status", "Concluída");
-  document.getElementById("num-canceladas").textContent = contar(lista, "status", "Cancelada");
+function desenharBarrasDePrioridade(demandas) {
+  const cores = {
+    'Critica': 'var(--prioridade-critica)',
+    'Alta': 'var(--prioridade-alta)',
+    'Media': 'var(--prioridade-media)',
+    'Baixa': 'var(--prioridade-baixa)'
+  };
+
+  const itens = PRIORIDADES.map(function (prioridade) {
+    return {
+      rotulo: prioridade,
+      valor: contar(demandas, 'prioridade', prioridade),
+      cor: cores[prioridade]
+    };
+  });
+
+  desenharBarras('barras-prioridade', itens, demandas.length);
 }
 
-// Preenche as barras de um card. O rótulo de cada barra ("Alta", "Tarefa"...)
-// é usado para saber qual valor contar.
-function preencherBarras(idCard, campo, lista) {
-  const itens = document.querySelectorAll("#" + idCard + " .barra-item");
+/*
+ * Os quatro tipos obrigatorios aparecem sempre.
+ * Tipos personalizados cadastrados pelos usuarios entram depois deles.
+ */
+function desenharBarrasDeTipo(demandas) {
+  const tipos = TIPOS.slice();
 
-  for (const item of itens) {
-    const rotulo = item.querySelector(".barra-rotulo").textContent;
-    const quantidade = contar(lista, campo, rotulo);
-
-    let porcentagem = 0;
-    if (lista.length > 0) {
-      porcentagem = (quantidade / lista.length) * 100;
+  demandas.forEach(function (demanda) {
+    if (tipos.indexOf(demanda.tipo) < 0) {
+      tipos.push(demanda.tipo);
     }
+  });
 
-    item.querySelector(".barra-preenchida").style.width = porcentagem + "%";
-    item.querySelector(".barra-valor").textContent = quantidade;
-  }
+  const itens = tipos.map(function (tipo) {
+    return {
+      rotulo: tipo,
+      valor: contar(demandas, 'tipo', tipo),
+      cor: 'var(--cor-primaria)'
+    };
+  });
+
+  desenharBarras('barras-tipo', itens, demandas.length);
 }
 
-// Cada linha é uma lista de células. A célula pode ser um texto simples
-// ou um objeto { texto, selo } quando precisa do selo colorido.
-function preencherTabela(idTabela, linhas, mensagemVazia) {
-  const corpo = document.getElementById(idTabela);
-  corpo.innerHTML = "";
+/*
+ * Monta as barras dentro do container informado.
+ * A largura de cada barra e proporcional ao total de demandas.
+ */
+function desenharBarras(idContainer, itens, total) {
+  const container = document.getElementById(idContainer);
+  container.innerHTML = '';
 
-  if (linhas.length === 0) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 4;
-    td.className = "tabela-vazia";
-    td.textContent = mensagemVazia;
-    tr.appendChild(td);
-    corpo.appendChild(tr);
+  itens.forEach(function (item) {
+    const linha = document.createElement('div');
+    linha.className = 'barra-item';
+
+    const rotulo = document.createElement('span');
+    rotulo.className = 'barra-rotulo';
+    rotulo.textContent = item.rotulo;
+
+    const fundo = document.createElement('div');
+    fundo.className = 'barra-fundo';
+
+    const preenchida = document.createElement('div');
+    preenchida.className = 'barra-preenchida';
+    preenchida.style.width = (total > 0 ? (item.valor / total) * 100 : 0) + '%';
+    preenchida.style.backgroundColor = item.cor;
+    fundo.appendChild(preenchida);
+
+    const valor = document.createElement('span');
+    valor.className = 'barra-valor';
+    valor.textContent = item.valor;
+
+    linha.appendChild(rotulo);
+    linha.appendChild(fundo);
+    linha.appendChild(valor);
+    container.appendChild(linha);
+  });
+}
+
+
+/* ==========================================================================
+   Demandas criticas em aberto
+   Criticas que ainda nao foram concluidas nem canceladas.
+   ========================================================================== */
+
+function listarCriticasEmAberto(demandas) {
+  const criticas = demandas.filter(function (demanda) {
+    return demanda.prioridade === 'Critica'
+      && demanda.status !== STATUS.CONCLUIDA
+      && demanda.status !== STATUS.CANCELADA;
+  });
+
+  const corpo = document.getElementById('corpo-criticas');
+  corpo.innerHTML = '';
+
+  if (criticas.length === 0) {
+    corpo.appendChild(linhaVaziaDashboard(4, 'Nenhuma demanda critica em aberto'));
     return;
   }
 
-  for (const linha of linhas) {
-    const tr = document.createElement("tr");
+  criticas.forEach(function (demanda) {
+    const projeto = buscarProjeto(demanda.projetoId);
+    const linha = document.createElement('tr');
 
-    for (const celula of linha) {
-      const td = document.createElement("td");
+    linha.appendChild(celulaLink(demanda));
+    linha.appendChild(celula(projeto ? projeto.nome : '-'));
+    linha.appendChild(celula(nomesUsuarios(demanda.responsaveisIds)));
+    linha.appendChild(celulaEtiquetaDashboard(demanda.status));
 
-      if (typeof celula === "string") {
-        td.textContent = celula;
-      } else {
-        const selo = document.createElement("span");
-        selo.className = "selo " + celula.selo;
-        selo.textContent = celula.texto;
-        td.appendChild(selo);
-      }
-
-      tr.appendChild(td);
-    }
-
-    corpo.appendChild(tr);
-  }
-}
-
-function preencherCriticas(lista) {
-  const criticas = lista.filter(function (demanda) {
-    return demanda.prioridade === "Crítica" && estaEmAberto(demanda);
+    corpo.appendChild(linha);
   });
-
-  const linhas = criticas.map(function (demanda) {
-    return [
-      demanda.titulo,
-      demanda.projeto,
-      demanda.responsavel || "-",
-      { texto: demanda.status, selo: CLASSE_STATUS[demanda.status] }
-    ];
-  });
-
-  preencherTabela("tabela-criticas", linhas, "Nenhuma demanda crítica em aberto");
-}
-
-// Demandas em aberto com prazo dentro dos próximos DIAS_ALERTA dias.
-// Prazos que já passaram também entram, marcados como vencidos.
-function preencherProximasDoPrazo(lista) {
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
-  const limite = new Date(hoje);
-  limite.setDate(limite.getDate() + DIAS_ALERTA);
-
-  const proximas = lista.filter(function (demanda) {
-    return demanda.prazo && estaEmAberto(demanda) && converterData(demanda.prazo) <= limite;
-  });
-
-  // as mais urgentes primeiro
-  proximas.sort(function (a, b) {
-    return converterData(a.prazo) - converterData(b.prazo);
-  });
-
-  const linhas = proximas.map(function (demanda) {
-    let textoPrazo = formatarData(demanda.prazo);
-    if (converterData(demanda.prazo) < hoje) {
-      textoPrazo += " (vencido)";
-    }
-
-    return [
-      demanda.titulo,
-      textoPrazo,
-      { texto: demanda.prioridade, selo: CLASSE_PRIORIDADE[demanda.prioridade] },
-      { texto: demanda.status, selo: CLASSE_STATUS[demanda.status] }
-    ];
-  });
-
-  preencherTabela("tabela-prazo", linhas, "Nenhuma demanda próxima do prazo");
 }
 
 
-// ---------- Início ----------
+/* ==========================================================================
+   Demandas proximas do prazo de finalizacao
+   Demandas ainda em andamento cujo prazo esta chegando ou ja venceu.
+   ========================================================================== */
 
-function iniciarDashboard() {
-  const validas = [];
-  let invalidas = 0;
-
-  // separa as demandas válidas das inválidas
-  for (const demanda of demandas) {
-    const erros = validarDemanda(demanda);
-
-    if (erros.length === 0) {
-      validas.push(demanda);
-    } else {
-      invalidas++;
-      console.warn("Demanda ignorada (" + demanda.titulo + "): " + erros.join(", "));
+function listarProximasDoPrazo(demandas) {
+  const proximas = demandas.filter(function (demanda) {
+    if (!demanda.prazo) {
+      return false;
     }
+    if (demanda.status === STATUS.CONCLUIDA || demanda.status === STATUS.CANCELADA) {
+      return false;
+    }
+    const dias = diasAte(demanda.prazo);
+    return dias !== null && dias <= DIAS_PROXIMO_DO_PRAZO;
+  });
+
+  // Do prazo mais apertado para o mais folgado.
+  proximas.sort(function (a, b) { return a.prazo.localeCompare(b.prazo); });
+
+  const corpo = document.getElementById('corpo-prazo');
+  corpo.innerHTML = '';
+
+  if (proximas.length === 0) {
+    corpo.appendChild(linhaVaziaDashboard(4, 'Nenhuma demanda proxima do prazo'));
+    return;
   }
 
-  // demandas inválidas não entram nas contagens, mas o usuário é avisado
-  if (invalidas > 0) {
-    const aviso = document.getElementById("aviso-dados");
-    aviso.textContent = invalidas + " demanda(s) com dados inválidos foram ignoradas no resumo.";
-    aviso.hidden = false;
-  }
+  proximas.forEach(function (demanda) {
+    const linha = document.createElement('tr');
+    const dias = diasAte(demanda.prazo);
 
-  preencherNumeros(validas);
-  preencherBarras("card-prioridade", "prioridade", validas);
-  preencherBarras("card-tipo", "tipo", validas);
-  preencherCriticas(validas);
-  preencherProximasDoPrazo(validas);
+    linha.appendChild(celulaLink(demanda));
+
+    // Alem da data, mostra em quantos dias o prazo vence ou ha quantos venceu.
+    const prazo = celula(formatarData(demanda.prazo) + ' (' + descreverPrazo(dias) + ')');
+    if (dias < 0) {
+      prazo.style.color = 'var(--status-cancelada)';
+    }
+    linha.appendChild(prazo);
+
+    linha.appendChild(celulaEtiquetaDashboard(demanda.prioridade));
+    linha.appendChild(celulaEtiquetaDashboard(demanda.status));
+
+    corpo.appendChild(linha);
+  });
 }
 
-iniciarDashboard();
+/* Texto curto indicando a situacao do prazo. */
+function descreverPrazo(dias) {
+  if (dias < 0) {
+    return 'venceu ha ' + Math.abs(dias) + (Math.abs(dias) === 1 ? ' dia' : ' dias');
+  }
+  if (dias === 0) {
+    return 'vence hoje';
+  }
+  return 'faltam ' + dias + (dias === 1 ? ' dia' : ' dias');
+}
+
+
+/* ==========================================================================
+   Funcoes auxiliares das tabelas
+   ========================================================================== */
+
+function celula(texto) {
+  const td = document.createElement('td');
+  // textContent evita que o conteudo cadastrado seja interpretado como HTML.
+  td.textContent = texto;
+  return td;
+}
+
+/* Titulo da demanda como link para a tela de detalhes/edicao. */
+function celulaLink(demanda) {
+  const td = document.createElement('td');
+  const link = document.createElement('a');
+  link.href = 'demanda.html?id=' + demanda.id;
+  link.textContent = demanda.titulo;
+  link.style.color = 'var(--cor-primaria)';
+  link.style.textDecoration = 'none';
+  td.appendChild(link);
+  return td;
+}
+
+function celulaEtiquetaDashboard(valor) {
+  const td = document.createElement('td');
+  td.appendChild(criarEtiqueta(valor));
+  return td;
+}
+
+function linhaVaziaDashboard(colunas, mensagem) {
+  const linha = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = colunas;
+  td.className = 'tabela-vazia';
+  td.textContent = mensagem;
+  linha.appendChild(td);
+  return linha;
+}
