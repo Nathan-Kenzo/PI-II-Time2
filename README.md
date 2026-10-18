@@ -199,10 +199,11 @@ PI-II-Time2/
 ├── index.html             # Ponto de entrada
 ├── .gitignore
 └── README.md
+├── backend/               # API (Node.js, TypeScript, Express)
 ```
 
 > O frontend está em desenvolvimento com dados simulados em `js/dados.js`.
-> A estrutura de `backend/` e `database/` será adicionada conforme
+> A estrutura de `database/` será adicionada conforme
 > o desenvolvimento avançar.
 
 ---
@@ -238,10 +239,19 @@ node js/validacoes.test.js
 ```
 
 > [!NOTE]
-> As instruções de instalação de dependências, configuração do banco de dados,
-> variáveis de ambiente e execução do backend serão documentadas nesta seção
-> conforme cada parte do sistema for implementada.
+>### Executando o backend
 
+O backend fica na pasta `backend/` e, por enquanto, usa dados de teste em memória
+(sem banco de dados).
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+O servidor sobe em http://localhost:3000. Ao abrir essa URL no navegador, aparece
+a mensagem "API do DemandaTrack funcionando".
 ---
 
 ## Equipe
