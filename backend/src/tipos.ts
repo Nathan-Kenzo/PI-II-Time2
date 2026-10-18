@@ -22,6 +22,7 @@ export interface Usuario {
   email: string;
   senha: string; // nunca devolver a senha nas respostas da API
   perfil: Perfil;
+  projetos: number[]; // ids dos projetos vinculados (Administrador vê todos, por isso fica vazio)
 }
 
 export interface Projeto {
