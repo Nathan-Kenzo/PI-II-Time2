@@ -171,6 +171,14 @@ cadastro ou a atualização do prazo.
 
 ```
 PI-II-Time2/
+├── backend/               # API (Node.js, TypeScript, Express)
+│   ├── src/
+│   │   ├── servidor.ts    # Ponto de entrada da API
+│   │   ├── tipos.ts       # Tipos e listas oficiais (tipo, prioridade, status, perfil)
+│   │   ├── dados/         # Dados de teste em memória (até o banco entrar)
+│   │   └── rotas/         # Um arquivo de rota por integrante
+│   ├── package.json
+│   └── tsconfig.json
 ├── css/                   # Estilos de cada tela
 │   ├── cadastro.css
 │   ├── dashboard.css
@@ -195,15 +203,16 @@ PI-II-Time2/
 │   ├── listagem.html
 │   └── login.html
 ├── docs/
+│   ├── Plano_Banco_de_Dados.pdf  # Modelo, arquitetura e cronograma do banco
 │   └── reunioes/          # Documento de visão, cronograma e atas de reunião
 ├── index.html             # Ponto de entrada
 ├── .gitignore
 └── README.md
 ```
 
-> O frontend está em desenvolvimento com dados simulados em `js/dados.js`.
-> A estrutura de `backend/` e `database/` será adicionada conforme
-> o desenvolvimento avançar.
+> O frontend ainda usa dados simulados em `js/dados.js` e o backend usa dados
+> de teste em memória. A pasta `database/` (MySQL) será adicionada conforme o
+> [plano do banco de dados](docs/Plano_Banco_de_Dados.pdf).
 
 ---
 
@@ -237,10 +246,32 @@ biblioteca de teste. Ele falha se alguma regra deixar de valer:
 node js/validacoes.test.js
 ```
 
+### Executando o backend
+
+O backend fica na pasta `backend/` e, por enquanto, usa dados de teste em
+memória (sem banco de dados). Os dados voltam ao estado inicial a cada reinício.
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+O servidor sobe em http://localhost:3000. Ao abrir essa URL no navegador,
+aparece a mensagem "API do DemandaTrack funcionando".
+
+Rotas disponíveis até o momento:
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/dashboard` | Indicadores da tela inicial |
+| `GET` | `/demandas` | Listagem com filtros, busca e ordenação |
+| `GET` | `/projetos` | Lista de projetos |
+| `POST` | `/demandas` | Cadastro de demanda (valida prazo na API de feriados) |
+
 > [!NOTE]
-> As instruções de instalação de dependências, configuração do banco de dados,
-> variáveis de ambiente e execução do backend serão documentadas nesta seção
-> conforme cada parte do sistema for implementada.
+> Configuração do banco de dados e variáveis de ambiente serão documentadas
+> aqui quando o MySQL for integrado.
 
 ---
 
@@ -284,10 +315,9 @@ Reuniões de acompanhamento às **segundas-feiras, às 07:10h**:
 |:-:|---|---|
 | 1 | 17/08/2026 | ✅ Realizada |
 | 2 | 31/08/2026 | ✅ Realizada |
-| 3 | 21/09/2026 | 📍 Próxima reunião |
-| 4 | 05/10/2026 | ⏳ Agendada |
-| 5 | 26/10/2026 | ⏳ Agendada |
-| 6 | 16/11/2026 | ⏳ Agendada |
+| 3 | 21/09/2026 | ✅ Realizada |
+| 4 | 19/10/2026 | 📍 Próxima reunião |
+| 5 | 16/11/2026 | ⏳ Agendada |
 
 ---
 
@@ -330,7 +360,7 @@ comentários explicativos sobre o código.
 
 ## Status do Projeto
 
-🟡 **Em desenvolvimento** — telas do frontend em construção com dados simulados.
+🟡 **Em desenvolvimento** — frontend pronto com dados simulados; API em construção.
 
 - [x] Criação do repositório no GitHub
 - [x] Inclusão dos integrantes e da professora orientadora
@@ -341,8 +371,10 @@ comentários explicativos sobre o código.
 - [x] Tela de dashboard com indicadores
 - [x] Tela de listagem com filtros, busca e ordenação
 - [x] Tela de demanda e simulação de perfis de acesso
-- [ ] Modelagem do banco de dados
-- [ ] Implementação da API (backend)
+- [x] Estrutura do backend (Express + TypeScript) com dados em memória
+- [x] Plano de implementação do banco de dados
+- [ ] Implementação da API (backend) — dashboard, listagem e cadastro prontos; login, detalhes e edição pendentes
+- [ ] Modelagem e criação do banco de dados MySQL
 - [ ] Integração do frontend com a API
 - [ ] Validação de prazo pela API de feriados
 - [ ] Integração e testes
@@ -352,5 +384,5 @@ comentários explicativos sobre o código.
 
 <p align="center">
   Desenvolvido pelo <strong>Time 2</strong> — Projeto Integrador II · PUC-Campinas · 2026<br>
-  <sub>Última atualização deste documento: 20/09/2026</sub>
+  <sub>Última atualização deste documento: 18/10/2026</sub>
 </p>
