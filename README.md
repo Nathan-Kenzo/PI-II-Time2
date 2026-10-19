@@ -272,6 +272,9 @@ Rotas disponíveis até o momento:
 | `GET` | `/demandas` | Listagem com filtros, busca e ordenação |
 | `GET` | `/projetos` | Lista de projetos |
 | `POST` | `/demandas` | Cadastro de demanda (valida prazo na API de feriados) |
+| `GET` | `/demandas/:id` | Detalhes de uma demanda |
+| `GET` | `/demandas/:id/comentarios` | Comentários da demanda |
+| `POST` | `/demandas/:id/comentarios` | Registro de comentário (`usuarioId` e `texto`) |
 
 > [!NOTE]
 > Configuração do banco de dados e variáveis de ambiente serão documentadas
@@ -377,7 +380,7 @@ comentários explicativos sobre o código.
 - [x] Tela de demanda e simulação de perfis de acesso
 - [x] Estrutura do backend (Express + TypeScript) com dados em memória
 - [x] Plano de implementação do banco de dados
-- [ ] Implementação da API (backend) — login, dashboard, listagem e cadastro prontos; detalhes e edição pendentes
+- [ ] Implementação da API (backend) — login, dashboard, listagem, cadastro e detalhes prontos; edição pendente
 - [ ] Modelagem e criação do banco de dados MySQL
 - [ ] Integração do frontend com a API
 - [ ] Validação de prazo pela API de feriados
