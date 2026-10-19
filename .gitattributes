@@ -1,0 +1,6 @@
+# Arquivos binarios: nunca converter quebras de linha
+*.pdf   binary
+*.PDF   binary
+*.png   binary
+*.jpg   binary
+*.docx  binary
