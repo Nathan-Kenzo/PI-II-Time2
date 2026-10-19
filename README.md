@@ -187,8 +187,10 @@ PI-II-Time2/
 │   ├── login.css
 │   └── simulacao.css
 ├── js/                    # Comportamento, validações e dados simulados
+│   ├── cadastro.js        # Validações do cadastro de usuário
 │   ├── dados.js           # Massa de dados para testes sem backend
 │   ├── dashboard.js       # Indicadores da tela inicial
+│   ├── login.js           # Validações do login
 │   ├── demanda.js         # Cadastro e edição de demanda
 │   ├── formato.js         # Funções de formatação reutilizáveis
 │   ├── listagem.js        # Filtros, busca e ordenação
@@ -264,6 +266,8 @@ Rotas disponíveis até o momento:
 
 | Método | Rota | Descrição |
 |---|---|---|
+| `POST` | `/login` | Autenticação por e-mail e senha |
+| `GET` | `/usuarios` | Lista de usuários (sem a senha) |
 | `GET` | `/dashboard` | Indicadores da tela inicial |
 | `GET` | `/demandas` | Listagem com filtros, busca e ordenação |
 | `GET` | `/projetos` | Lista de projetos |
@@ -373,7 +377,7 @@ comentários explicativos sobre o código.
 - [x] Tela de demanda e simulação de perfis de acesso
 - [x] Estrutura do backend (Express + TypeScript) com dados em memória
 - [x] Plano de implementação do banco de dados
-- [ ] Implementação da API (backend) — dashboard, listagem e cadastro prontos; login, detalhes e edição pendentes
+- [ ] Implementação da API (backend) — login, dashboard, listagem e cadastro prontos; detalhes e edição pendentes
 - [ ] Modelagem e criação do banco de dados MySQL
 - [ ] Integração do frontend com a API
 - [ ] Validação de prazo pela API de feriados
