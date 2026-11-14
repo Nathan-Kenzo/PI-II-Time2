@@ -2,11 +2,11 @@
  * Autor: Pedro Tiezo Sales Shimizu
  * Descricao: Camada temporaria de dados do DemandaTrack.
  *
- * IMPORTANTE: enquanto a API (Node.js + TypeScript + Express) e o banco MySQL
- * nao estiverem prontos, esta camada guarda projetos, usuarios e demandas no
- * localStorage do navegador. Quando o backend existir, basta trocar o corpo das
- * funcoes deste arquivo por chamadas fetch() a API, mantendo a mesma assinatura,
- * que nenhuma outra tela precisara ser alterada.
+ * IMPORTANTE: esta camada guarda projetos, usuarios e demandas no localStorage
+ * do navegador e esta sendo substituida, tela por tela, por chamadas fetch() a
+ * API (Node.js + TypeScript + Express), que le e grava no banco Oracle.
+ * O cadastro de demanda (js/demanda.js) ja usa a API; as telas que ainda nao
+ * foram integradas continuam lendo daqui.
  */
 
 /* ==========================================================================
@@ -15,18 +15,6 @@
 
 /* Tipos obrigatorios da demanda (item 2.2.1 do documento de visao) */
 const TIPOS = ['Tarefa', 'Defeito', 'Melhoria', 'Documentacao'];
-
-/*
- * Opcao extra da equipe: alem dos quatro tipos obrigatorios, a demanda pode
- * receber um tipo escrito pelo proprio usuario. Esta constante e apenas o rotulo
- * exibido na lista; o que fica gravado na demanda e o texto digitado.
- */
-const TIPO_PERSONALIZADO = 'Personalizado...';
-
-/* Indica se o tipo gravado e um dos quatro obrigatorios ou um texto livre. */
-function tipoEhPersonalizado(tipo) {
-  return !!tipo && TIPOS.indexOf(tipo) < 0;
-}
 
 /* Prioridades obrigatorias (item 2.2.2) */
 const PRIORIDADES = ['Critica', 'Alta', 'Media', 'Baixa'];

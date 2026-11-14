@@ -202,11 +202,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Campo de texto do tipo personalizado, exibido logo abaixo da lista de tipos */
-#tipo-personalizado {
-  margin-top: 2px;
-}
-
 
 /* ---------------------------------------------------------------
    Lista de responsaveis com caixas de marcacao

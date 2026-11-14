@@ -9,7 +9,16 @@
  *   - validar os dados, inclusive o prazo, consultando a API externa de feriados;
  *   - gravar a demanda, registrando automaticamente o historico de alteracoes;
  *   - registrar comentarios e exibir o historico.
+ *
+ * Integracao com a API (Reuniao 5):
+ *   - os projetos do campo de selecao vem de GET /projetos (banco de dados);
+ *   - o cadastro envia os dados para POST /demandas, que grava no banco;
+ *   - as mensagens de erro devolvidas pela API (400, 403, 404...) aparecem na tela.
+ * A edicao ainda usa os dados locais de js/dados.js ate a rota de edicao existir.
  */
+
+/* Endereco da API do DemandaTrack (backend/, iniciado com "npm run dev"). */
+const API_URL = 'http://localhost:3000';
 
 /* Endereco da API externa de feriados nacionais exigida pelo documento de visao. */
 const API_FERIADOS = 'https://brasilapi.com.br/api/feriados/v1/';
@@ -28,10 +37,10 @@ let usuario = null;
    Inicializacao
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
   usuario = usuarioLogado();
 
-  montarListasFixas();
+  await montarListasFixas();
 
   // O identificador da demanda vem pela URL: demanda.html?id=2
   const parametros = new URLSearchParams(window.location.search);
@@ -60,26 +69,63 @@ document.addEventListener('DOMContentLoaded', function () {
    ========================================================================== */
 
 /* Preenche tipo, prioridade, projeto e a lista de responsaveis. */
-function montarListasFixas() {
-  // Os quatro tipos obrigatorios mais a opcao de escrever um tipo proprio.
-  preencherSelect('tipo', TIPOS.concat([TIPO_PERSONALIZADO]));
+async function montarListasFixas() {
+  // Somente os quatro tipos obrigatorios do documento de visao (item 2.2.1).
+  preencherSelect('tipo', TIPOS);
   preencherSelect('prioridade', PRIORIDADES);
 
-  // Mostra ou esconde o campo de texto conforme a escolha do tipo.
-  document.getElementById('tipo').addEventListener('change', alternarTipoPersonalizado);
+  montarListaDeResponsaveis();
 
+  // Os projetos vem do banco de dados, pela rota GET /projetos da API.
   // O usuario so pode associar a demanda a um projeto ao qual tem acesso.
-  const projetos = projetosDisponiveis(usuario);
   const selectProjeto = document.getElementById('projeto');
   selectProjeto.innerHTML = '';
-  projetos.forEach(function (projeto) {
+
+  const resposta = await chamarApi('GET', '/projetos');
+  if (!resposta.ok) {
+    mostrarAviso('aviso-erro', 'Nao foi possivel carregar os projetos. ' + resposta.mensagem);
+    return;
+  }
+
+  resposta.dados.projetos.forEach(function (projeto) {
+    if (!vinculadoAoProjeto(usuario, projeto.id)) {
+      return;
+    }
     const opcao = document.createElement('option');
     opcao.value = projeto.id;
     opcao.textContent = projeto.nome;
     selectProjeto.appendChild(opcao);
   });
+}
 
-  montarListaDeResponsaveis();
+/*
+ * Faz uma chamada a API e devolve sempre o mesmo formato, para a tela nao
+ * precisar repetir o tratamento de erro:
+ *   { ok: true,  dados: <JSON da resposta> }
+ *   { ok: false, mensagem: <texto pronto para mostrar ao usuario> }
+ *
+ * Quando a API recusa a requisicao, ela responde { erro, detalhes }; os dois
+ * sao juntados na mensagem. Se o servidor estiver desligado, o fetch falha e
+ * a mensagem orienta o usuario.
+ */
+async function chamarApi(metodo, caminho, corpo) {
+  try {
+    const resposta = await fetch(API_URL + caminho, {
+      method: metodo,
+      headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
+      body: corpo ? JSON.stringify(corpo) : undefined
+    });
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      const detalhes = Array.isArray(dados.detalhes) ? ' ' + dados.detalhes.join(' ') : '';
+      return { ok: false, mensagem: (dados.erro || 'Erro ' + resposta.status) + '.' + detalhes };
+    }
+    return { ok: true, dados: dados };
+  } catch (erro) {
+    console.warn('Falha ao chamar a API:', erro);
+    return { ok: false, mensagem: 'A API nao respondeu. Confira se o servidor esta rodando em ' + API_URL + '.' };
+  }
 }
 
 /*
@@ -133,36 +179,6 @@ function marcarResponsaveis(ids) {
   });
 }
 
-/*
- * Exibe o campo de texto quando o tipo escolhido e "Personalizado...".
- * Nos quatro tipos obrigatorios o campo fica escondido e vazio.
- */
-function alternarTipoPersonalizado() {
-  const select = document.getElementById('tipo');
-  const campoTexto = document.getElementById('tipo-personalizado');
-  const personalizado = select.value === TIPO_PERSONALIZADO;
-
-  campoTexto.classList.toggle('oculto', !personalizado);
-
-  if (personalizado) {
-    campoTexto.focus();
-  } else {
-    campoTexto.value = '';
-  }
-}
-
-/*
- * Tipo que sera gravado na demanda: o texto digitado quando a opcao escolhida
- * for "Personalizado...", ou o proprio valor da lista nos demais casos.
- */
-function tipoInformado() {
-  const select = document.getElementById('tipo');
-  if (select.value === TIPO_PERSONALIZADO) {
-    return document.getElementById('tipo-personalizado').value.trim();
-  }
-  return select.value;
-}
-
 function preencherSelect(id, valores) {
   const select = document.getElementById(id);
   select.innerHTML = '';
@@ -194,7 +210,7 @@ function prepararModoCriacao() {
   }
 
   // O Lider precisa estar vinculado a pelo menos um projeto para criar demandas.
-  if (projetosDisponiveis(usuario).length === 0) {
+  if (document.getElementById('projeto').options.length === 0) {
     mostrarAviso('aviso-permissao',
       'Voce nao esta vinculado a nenhum projeto, portanto nao pode criar demandas.');
     bloquearFormulario();
@@ -234,11 +250,6 @@ function prepararModoEdicao() {
   document.getElementById('campo-status').classList.remove('oculto');
   document.getElementById('card-comentarios').classList.remove('oculto');
   document.getElementById('card-historico').classList.remove('oculto');
-
-  // Confirmacao exibida logo apos o cadastro de uma demanda nova.
-  if (new URLSearchParams(window.location.search).get('criada')) {
-    mostrarAviso('aviso-sucesso', 'Demanda cadastrada com sucesso e aberta para acompanhamento.');
-  }
 }
 
 /* Copia os dados da demanda para os campos da tela. */
@@ -248,22 +259,7 @@ function preencherFormulario() {
   document.getElementById('prioridade').value = demandaAtual.prioridade;
   document.getElementById('prazo').value = demandaAtual.prazo || '';
 
-  /*
-   * Tipo: se o valor gravado nao for um dos quatro obrigatorios, a demanda usa
-   * um tipo personalizado, entao a lista marca "Personalizado..." e o texto vai
-   * para o campo livre.
-   */
-  const selectTipo = document.getElementById('tipo');
-  const campoTipoTexto = document.getElementById('tipo-personalizado');
-  if (tipoEhPersonalizado(demandaAtual.tipo)) {
-    selectTipo.value = TIPO_PERSONALIZADO;
-    campoTipoTexto.value = demandaAtual.tipo;
-    campoTipoTexto.classList.remove('oculto');
-  } else {
-    selectTipo.value = demandaAtual.tipo;
-    campoTipoTexto.value = '';
-    campoTipoTexto.classList.add('oculto');
-  }
+  document.getElementById('tipo').value = demandaAtual.tipo;
 
   marcarResponsaveis(demandaAtual.responsaveisIds);
 
@@ -342,7 +338,6 @@ function aplicarPermissoes() {
   document.getElementById('titulo').disabled = !podeEditar;
   document.getElementById('descricao').disabled = !podeEditar;
   document.getElementById('tipo').disabled = !podeEditar;
-  document.getElementById('tipo-personalizado').disabled = !podeEditar;
   document.getElementById('prazo').disabled = !podeEditar;
 
   // Prioridade e responsaveis tem permissao propria no documento de visao
@@ -418,16 +413,11 @@ async function validarFormulario() {
     valido = false;
   }
 
-  // Quando o tipo e personalizado, o texto digitado passa a ser obrigatorio.
-  if (document.getElementById('tipo').value === TIPO_PERSONALIZADO) {
-    const tipoTexto = document.getElementById('tipo-personalizado').value.trim();
-    if (tipoTexto.length < 3) {
-      marcarErro('tipo', 'Escreva o tipo personalizado com pelo menos 3 caracteres.');
-      valido = false;
-    } else if (TIPOS.indexOf(tipoTexto) >= 0) {
-      marcarErro('tipo', 'Este tipo ja existe na lista. Selecione-o diretamente em vez de escrever.');
-      valido = false;
-    }
+  // No cadastro pela API a demanda tem um unico responsavel (pode ficar em branco).
+  // ponytail: a edicao local ainda aceita varios; unificar quando a edicao for para a API.
+  if (!demandaAtual && responsaveisMarcados().length > 1) {
+    marcarErro('responsaveis', 'Selecione no maximo um responsavel.');
+    valido = false;
   }
 
   if (prazo) {
@@ -506,7 +496,7 @@ async function aoSalvar(evento) {
     if (demandaAtual) {
       atualizarDemanda();
     } else {
-      criarDemanda();
+      await criarDemanda();
     }
   } finally {
     botao.disabled = false;
@@ -514,32 +504,42 @@ async function aoSalvar(evento) {
   }
 }
 
-/* Cria uma nova demanda, sempre com o status Aberta. */
-function criarDemanda() {
-  const agora = new Date().toISOString();
-
-  const nova = {
-    id: proximoIdDemanda(),
+/*
+ * Cria uma nova demanda enviando os dados para POST /demandas.
+ * Status, data de criacao e data de atualizacao nao sao enviados: quem define
+ * e o servidor. A API repete as validacoes e grava a demanda e o historico no banco.
+ */
+async function criarDemanda() {
+  const resposta = await chamarApi('POST', '/demandas', {
     titulo: document.getElementById('titulo').value.trim(),
     descricao: document.getElementById('descricao').value.trim(),
-    tipo: tipoInformado(),
+    tipo: document.getElementById('tipo').value,
     prioridade: document.getElementById('prioridade').value,
-    status: STATUS.ABERTA,
     projetoId: Number(document.getElementById('projeto').value),
-    responsaveisIds: responsaveisMarcados(),
-    dataCriacao: agora,
-    dataAtualizacao: agora,
+    responsavelId: responsaveisMarcados()[0] || null,
     prazo: document.getElementById('prazo').value || null,
-    comentarios: [],
-    historico: [
-      { id: 1, usuarioId: usuario.id, descricao: 'criou a demanda.', dataHora: agora }
-    ]
-  };
+    usuarioId: usuario.id
+  });
 
-  salvarDemanda(nova);
+  // Erro devolvido pela API (dados invalidos, sem permissao, feriado...) vai para a tela.
+  if (!resposta.ok) {
+    mostrarAviso('aviso-erro', resposta.mensagem);
+    return;
+  }
 
-  // Segue para o modo de edicao da demanda recem-criada.
-  window.location.href = 'demanda.html?id=' + nova.id + '&criada=1';
+  const criada = resposta.dados.demanda;
+  mostrarAviso('aviso-sucesso',
+    'Demanda #' + criada.id + ' gravada no banco de dados com o status ' + criada.status +
+    ', em ' + formatarDataHora(criada.dataCriacao) + '.');
+
+  // A API avisa quando nao conseguiu conferir o prazo na API de feriados.
+  if (resposta.dados.aviso) {
+    mostrarAviso('aviso-info', resposta.dados.aviso);
+  }
+
+  // Limpa o formulario para um novo cadastro.
+  document.getElementById('formulario-demanda').reset();
+  marcarResponsaveis([]);
 }
 
 /*
@@ -552,7 +552,7 @@ function atualizarDemanda() {
 
   const novoTitulo = document.getElementById('titulo').value.trim();
   const novaDescricao = document.getElementById('descricao').value.trim();
-  const novoTipo = tipoInformado();
+  const novoTipo = document.getElementById('tipo').value;
   const novaPrioridade = document.getElementById('prioridade').value;
   const novoPrazo = document.getElementById('prazo').value || null;
   const novosResponsaveis = responsaveisMarcados();
