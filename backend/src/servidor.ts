@@ -14,6 +14,20 @@ const PORTA = 3000;
 // permite ler o corpo das requisições em JSON
 app.use(express.json());
 
+// libera as telas (abertas direto do arquivo ou de outra porta) a chamar a API
+app.use(function (req: Request, res: Response, next: NextFunction) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PATCH");
+
+  // o navegador pergunta antes (OPTIONS) se pode enviar JSON; basta responder que sim
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 // rota simples só para conferir se o servidor está no ar
 app.get("/", function (req: Request, res: Response) {
   res.json({ mensagem: "API do DemandaTrack funcionando" });
