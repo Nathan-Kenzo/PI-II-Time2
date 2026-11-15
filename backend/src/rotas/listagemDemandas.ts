@@ -5,18 +5,6 @@
  *   GET /demandas?usuarioId=N[&status=][&prioridade=][&tipo=][&projeto=]
  *                  [&responsavel=][&busca=][&ordenarPor=][&ordem=]
  *
- * Reunião 5: os dados agora vêm do banco Oracle (ver ../bd.ts). A estrutura da
- * rota e a validação dos parâmetros são as mesmas da Reunião 4; mudou só a forma
- * de acessar os dados (SQL no lugar dos arrays de dadosTeste.ts).
- *
- * Quem pede a lista precisa se identificar com usuarioId (como o POST /demandas
- * já faz). O Administrador enxerga todas as demandas; o Líder de Projeto e o
- * Membro da Equipe enxergam só as dos projetos a que estão vinculados (item 2.1
- * do Documento de Visão).
- *
- * Todo valor que vem da URL entra no SQL por variável de ligação (:nome), nunca
- * concatenado. O único texto montado "na mão" é o ORDER BY, e ele só usa valores
- * de listas fixas deste arquivo e de tipos.ts, nunca o que o usuário digitou.
  */
 
 import { Router, Request, Response } from "express";

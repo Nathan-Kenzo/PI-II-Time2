@@ -2,25 +2,6 @@
  * Autor: Nathan Kenzo Puzipe
  * Descricao: Controle da tela de listagem de demandas (pages/listagem.html).
  *
- * Integracao com a API (Reuniao 5):
- *   - a tabela e preenchida por GET /demandas (banco Oracle), nunca por valores
- *     fixos no HTML nem por js/dados.js;
- *   - filtros (status, prioridade, tipo, projeto, responsavel), busca e ordenacao
- *     sao enviados como parametros da URL e aplicados no banco;
- *   - cada linha tem um link para a demanda (demanda.html?id=N);
- *   - as mensagens de erro da API (400, 401...) e a falta de resposta do servidor
- *     aparecem na tela, e nao apenas no console.
- *
- * As validacoes em JavaScript da Reuniao 3 continuam valendo (validarBusca e
- * validarOpcao, de js/validacoes.js): um filtro invalido nem chega a ser enviado.
- * Elas nao substituem as da API, que repete as mesmas regras no servidor.
- *
- * Os selects de projeto e de responsavel sao montados com o que a propria API
- * devolve na primeira carga (sem filtros), assim o usuario so ve projetos e
- * pessoas das demandas que ele pode enxergar.
- *
- * Este arquivo depende, nesta ordem, de js/dados.js (usuarioLogado), js/permissoes.js
- * (podeCriarDemanda), js/formato.js (formatarData, etiquetas) e js/validacoes.js.
  */
 
 (function () {
