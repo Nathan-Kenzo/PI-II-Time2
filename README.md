@@ -269,9 +269,15 @@ em vez do administrador do banco.
 
 **1.2. Criar as tabelas e a carga inicial.** Na raiz do repositório, informe ao
 SQL\*Plus que os scripts estão em UTF-8 (por causa dos acentos) e rode os dois
-arquivos, nesta ordem:
+arquivos, nesta ordem. A primeira linha muda conforme o terminal:
 
-```bash
+| Terminal | Primeira linha |
+|---|---|
+| Prompt de Comando (cmd) | `set NLS_LANG=.AL32UTF8` |
+| PowerShell | `$env:NLS_LANG = ".AL32UTF8"` |
+| Git Bash | `export NLS_LANG=.AL32UTF8` |
+
+```bat
 set NLS_LANG=.AL32UTF8
 sqlplus demandatrack@localhost:1521/xepdb1
 ```
@@ -282,7 +288,10 @@ sqlplus demandatrack@localhost:1521/xepdb1
 EXIT
 ```
 
-No PowerShell, a primeira linha é `$env:NLS_LANG = ".AL32UTF8"`.
+> [!IMPORTANT]
+> Sem o `NLS_LANG` os scripts rodam sem erro, mas os acentos são gravados
+> errados (`Portal AcadÃªmico`) e o cadastro de demanda passa a falhar. Se isso
+> acontecer, defina a variável e rode os dois scripts de novo.
 
 O `schema.sql` cria as 6 tabelas (`usuario`, `projeto`, `usuario_projeto`,
 `demanda`, `comentario` e `historico`) e o `seed.sql` grava 5 usuários,
@@ -307,10 +316,12 @@ No banco as senhas ficam gravadas como hash (`scrypt`), nunca em texto puro.
 
 Copie o modelo e preencha a senha escolhida no passo 1.1:
 
-```bash
+```bat
 cd backend
 copy .env.example .env
 ```
+
+No Git Bash, o segundo comando é `cp .env.example .env`.
 
 ```
 BD_USUARIO=demandatrack
