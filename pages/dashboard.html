@@ -2,8 +2,9 @@
 <!--
   Autor da estrutura e do layout: Felipe Oliveira dos Santos
   Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
+  Integracao com a API (GET /dashboard): Felipe Oliveira Barbosa
   Descricao: Tela inicial com os indicadores resumidos das demandas.
-             Os numeros sao calculados em js/dashboard.js.
+             Os numeros vem da API e sao preenchidos em js/dashboard.js.
 -->
 <html lang="pt-br">
 <head>
@@ -34,7 +35,7 @@
     <h1 class="titulo-pagina">Dashboard</h1>
     <p class="subtitulo-pagina">Resumo geral das demandas cadastradas no sistema</p>
 
-    <!-- Aparece so quando alguma demanda tem dados invalidos (ver js/validacoes.js) -->
+    <!-- Aparece so quando a API devolve erro ou esta fora do ar (ver js/dashboard.js) -->
     <p class="aviso-dados" id="aviso-dados" hidden></p>
 
     <!-- Total de demandas + contagem por status -->
@@ -122,9 +123,7 @@
   </main>
 
   <script src="../js/dados.js"></script>
-  <script src="../js/permissoes.js"></script>
   <script src="../js/formato.js"></script>
-  <script src="../js/validacoes.js"></script>
   <script src="../js/simulacao.js"></script>
   <script src="../js/dashboard.js"></script>
 
