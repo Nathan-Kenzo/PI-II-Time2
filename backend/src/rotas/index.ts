@@ -11,6 +11,7 @@ import dashboard from "./dashboard";
 import listagemDemandas from "./listagemDemandas";
 import cadastroDemandas from "./cadastroDemandas";
 import detalhesDemandas from "./detalhesDemandas";
+import edicaoDemandas from "./edicaoDemandas";
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use(dashboard);
 router.use(listagemDemandas);
 router.use(cadastroDemandas);
 router.use(detalhesDemandas);
+router.use(edicaoDemandas);
 
 export default router;
