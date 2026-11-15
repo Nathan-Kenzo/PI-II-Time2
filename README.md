@@ -18,7 +18,7 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
   <img alt="Express" src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white">
   <img alt="Bootstrap" src="https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white">
-  <img alt="MySQL" src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+  <img alt="Oracle" src="https://img.shields.io/badge/Oracle-F80000?style=for-the-badge&logo=oracle&logoColor=white">
 </p>
 
 ---
@@ -161,7 +161,7 @@ cadastro ou a atualização do prazo.
 |---|---|
 | **Frontend** | HTML5, CSS3, JavaScript, Bootstrap |
 | **Backend** | Node.js (LTS), TypeScript, Express |
-| **Banco de Dados** | MySQL *(relacional)* |
+| **Banco de Dados** | Oracle Database *(relacional)* |
 | **Versionamento** | Git, GitHub, GitHub Projects |
 | **IDEs** | Visual Studio Code, JetBrains WebStorm |
 
@@ -174,11 +174,17 @@ PI-II-Time2/
 ├── backend/               # API (Node.js, TypeScript, Express)
 │   ├── src/
 │   │   ├── servidor.ts    # Ponto de entrada da API
+│   │   ├── bd.ts          # Conexão com o Oracle (pool) usada pelas rotas
+│   │   ├── senha.ts       # Hash e conferência de senha (scrypt)
 │   │   ├── tipos.ts       # Tipos e listas oficiais (tipo, prioridade, status, perfil)
-│   │   ├── dados/         # Dados de teste em memória (até o banco entrar)
+│   │   ├── dados/         # Dados de teste em memória (rotas ainda não migradas)
 │   │   └── rotas/         # Um arquivo de rota por integrante
+│   ├── .env.example       # Modelo da configuração de conexão com o banco
 │   ├── package.json
 │   └── tsconfig.json
+├── database/              # Scripts do banco de dados Oracle
+│   ├── schema.sql         # Criação das 6 tabelas
+│   └── seed.sql           # Carga inicial (usuários, projetos, demandas...)
 ├── css/                   # Estilos de cada tela
 │   ├── cadastro.css
 │   ├── dashboard.css
@@ -212,9 +218,14 @@ PI-II-Time2/
 └── README.md
 ```
 
-> O frontend ainda usa dados simulados em `js/dados.js` e o backend usa dados
-> de teste em memória. A pasta `database/` (MySQL) será adicionada conforme o
-> [plano do banco de dados](docs/Plano_Banco_de_Dados.pdf).
+> A integração com o banco está sendo feita rota por rota. Já leem e gravam no
+> Oracle: `GET /projetos` e `POST /demandas`, usadas pela tela de cadastro de
+> demanda. As demais rotas ainda usam os dados de teste em memória, e as demais
+> telas ainda usam os dados simulados de `js/dados.js`.
+>
+> O [plano do banco de dados](docs/Plano_Banco_de_Dados.pdf) foi escrito para
+> MySQL; o modelo de 6 tabelas foi mantido, mas o banco adotado é o Oracle,
+> como pede a Reunião 5. A referência atual são os scripts da pasta `database/`.
 
 ---
 
@@ -223,7 +234,8 @@ PI-II-Time2/
 ### Pré-requisitos
 
 - [Node.js](https://nodejs.org/) — versão LTS vigente
-- [MySQL](https://www.mysql.com/) instalado e em execução
+- [Oracle Database](https://www.oracle.com/database/technologies/xe-downloads.html) —
+  a edição gratuita Express Edition (XE) 21c é suficiente
 - [Git](https://git-scm.com/)
 
 ### Clonando o repositório
@@ -233,25 +245,93 @@ git clone https://github.com/Nathan-Kenzo/PI-II-Time2.git
 cd PI-II-Time2
 ```
 
-### Executando o frontend
+### 1. Criando o banco de dados
 
-Nesta etapa o projeto é composto apenas por arquivos estáticos e funciona com
-dados simulados, sem necessidade de servidor ou banco de dados. Basta abrir o
-arquivo `index.html` no navegador.
+Os comandos abaixo usam o SQL\*Plus, instalado junto com o Oracle XE. No XE o
+banco da aplicação é o `xepdb1`.
 
-### Rodando o autoteste das validações
-
-As regras de validação têm um autoteste que roda no Node, sem navegador e sem
-biblioteca de teste. Ele falha se alguma regra deixar de valer:
+**1.1. Criar o usuário da aplicação.** Conecte como administrador (a senha é a
+definida na instalação do Oracle):
 
 ```bash
-node js/validacoes.test.js
+sqlplus system@localhost:1521/xepdb1
 ```
 
-### Executando o backend
+```sql
+CREATE USER demandatrack IDENTIFIED BY "escolha_uma_senha";
+GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE TO demandatrack;
+ALTER USER demandatrack QUOTA UNLIMITED ON USERS;
+EXIT
+```
 
-O backend fica na pasta `backend/` e, por enquanto, usa dados de teste em
-memória (sem banco de dados). Os dados voltam ao estado inicial a cada reinício.
+A aplicação usa esse usuário, que só tem permissão sobre as próprias tabelas,
+em vez do administrador do banco.
+
+**1.2. Criar as tabelas e a carga inicial.** Na raiz do repositório, informe ao
+SQL\*Plus que os scripts estão em UTF-8 (por causa dos acentos) e rode os dois
+arquivos, nesta ordem. A primeira linha muda conforme o terminal:
+
+| Terminal | Primeira linha |
+|---|---|
+| Prompt de Comando (cmd) | `set NLS_LANG=.AL32UTF8` |
+| PowerShell | `$env:NLS_LANG = ".AL32UTF8"` |
+| Git Bash | `export NLS_LANG=.AL32UTF8` |
+
+```bat
+set NLS_LANG=.AL32UTF8
+sqlplus demandatrack@localhost:1521/xepdb1
+```
+
+```sql
+@database/schema.sql
+@database/seed.sql
+EXIT
+```
+
+> [!IMPORTANT]
+> Sem o `NLS_LANG` os scripts rodam sem erro, mas os acentos são gravados
+> errados (`Portal AcadÃªmico`) e o cadastro de demanda passa a falhar. Se isso
+> acontecer, defina a variável e rode os dois scripts de novo.
+
+O `schema.sql` cria as 6 tabelas (`usuario`, `projeto`, `usuario_projeto`,
+`demanda`, `comentario` e `historico`) e o `seed.sql` grava 5 usuários,
+3 projetos, 16 demandas, 5 comentários e o histórico de criação. Os dois podem
+ser rodados de novo a qualquer momento para voltar ao estado inicial; como as
+datas das demandas são calculadas a partir do dia da carga, isso também renova
+os prazos próximos e vencidos.
+
+Usuários de demonstração gravados pelo `seed.sql`:
+
+| Perfil | E-mail | Senha | Projetos |
+|---|---|---|---|
+| Administrador | `nathan@demandatrack.com` | `admin123` | todos |
+| Líder de Projeto | `pedro@demandatrack.com` | `lider123` | DemandaTrack |
+| Líder de Projeto | `henrique@demandatrack.com` | `lider456` | Portal Acadêmico, App de Biblioteca |
+| Membro da Equipe | `felipe.barbosa@demandatrack.com` | `membro123` | DemandaTrack |
+| Membro da Equipe | `felipe.santos@demandatrack.com` | `membro456` | DemandaTrack, Portal Acadêmico |
+
+No banco as senhas ficam gravadas como hash (`scrypt`), nunca em texto puro.
+
+### 2. Configurando a conexão
+
+Copie o modelo e preencha a senha escolhida no passo 1.1:
+
+```bat
+cd backend
+copy .env.example .env
+```
+
+No Git Bash, o segundo comando é `cp .env.example .env`.
+
+```
+BD_USUARIO=demandatrack
+BD_SENHA=escolha_uma_senha
+BD_CONEXAO=localhost:1521/xepdb1
+```
+
+O arquivo `.env` está no `.gitignore` e não é enviado ao repositório.
+
+### 3. Executando o backend
 
 ```bash
 cd backend
@@ -264,21 +344,43 @@ aparece a mensagem "API do DemandaTrack funcionando".
 
 Rotas disponíveis até o momento:
 
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/login` | Autenticação por e-mail e senha |
-| `GET` | `/usuarios` | Lista de usuários (sem a senha) |
-| `GET` | `/dashboard` | Indicadores da tela inicial |
-| `GET` | `/demandas` | Listagem com filtros, busca e ordenação |
-| `GET` | `/projetos` | Lista de projetos |
-| `POST` | `/demandas` | Cadastro de demanda (valida prazo na API de feriados) |
-| `GET` | `/demandas/:id` | Detalhes de uma demanda |
-| `GET` | `/demandas/:id/comentarios` | Comentários da demanda |
-| `POST` | `/demandas/:id/comentarios` | Registro de comentário (`usuarioId` e `texto`) |
+| Método | Rota | Descrição | Dados |
+|---|---|---|---|
+| `POST` | `/login` | Autenticação por e-mail e senha | memória |
+| `GET` | `/usuarios` | Lista de usuários (sem a senha) | memória |
+| `GET` | `/dashboard` | Indicadores da tela inicial | memória |
+| `GET` | `/demandas` | Listagem com filtros, busca e ordenação | memória |
+| `GET` | `/projetos` | Lista de projetos | **Oracle** |
+| `POST` | `/demandas` | Cadastro de demanda (valida prazo na API de feriados) | **Oracle** |
+| `GET` | `/demandas/:id` | Detalhes de uma demanda | memória |
+| `GET` | `/demandas/:id/comentarios` | Comentários da demanda | memória |
+| `POST` | `/demandas/:id/comentarios` | Registro de comentário (`usuarioId` e `texto`) | memória |
 
-> [!NOTE]
-> Configuração do banco de dados e variáveis de ambiente serão documentadas
-> aqui quando o MySQL for integrado.
+O `POST /demandas` exige o campo `usuarioId` (quem está criando): o Membro da
+Equipe recebe `403`, e o Líder de Projeto só cria nos projetos em que está
+vinculado. Cada demanda criada gera um registro no histórico.
+
+Para migrar uma rota para o banco, basta importar `executar` de
+`backend/src/bd.ts` e trocar a leitura dos arrays de `dadosTeste.ts` por SQL;
+o cabeçalho de `bd.ts` traz um exemplo.
+
+### 4. Abrindo o frontend
+
+Com o backend rodando, abra o arquivo `index.html` no navegador. A tela
+**Nova Demanda** (`pages/demanda.html`) carrega os projetos do banco e grava a
+demanda pela API; as mensagens de erro devolvidas pela API aparecem na própria
+tela. As outras telas ainda funcionam com dados simulados.
+
+### Rodando os autotestes
+
+As regras de validação e o hash de senha têm autotestes que rodam no Node, sem
+navegador e sem biblioteca de teste. Eles falham se alguma regra deixar de valer:
+
+```bash
+node js/validacoes.test.js
+cd backend
+npx tsx src/senha.ts
+```
 
 ---
 
@@ -323,8 +425,8 @@ Reuniões de acompanhamento às **segundas-feiras, às 07:10h**:
 | 1 | 17/08/2026 | ✅ Realizada |
 | 2 | 31/08/2026 | ✅ Realizada |
 | 3 | 21/09/2026 | ✅ Realizada |
-| 4 | 19/10/2026 | 📍 Próxima reunião |
-| 5 | 16/11/2026 | ⏳ Agendada |
+| 4 | 19/10/2026 | ✅ Realizada |
+| 5 | 16/11/2026 | 📍 Próxima reunião |
 
 ---
 
@@ -367,7 +469,7 @@ comentários explicativos sobre o código.
 
 ## Status do Projeto
 
-🟡 **Em desenvolvimento** — frontend pronto com dados simulados; API em construção.
+🟡 **Em desenvolvimento** — banco Oracle criado; integração entre telas, API e banco em andamento.
 
 - [x] Criação do repositório no GitHub
 - [x] Inclusão dos integrantes e da professora orientadora
@@ -381,9 +483,10 @@ comentários explicativos sobre o código.
 - [x] Estrutura do backend (Express + TypeScript) com dados em memória
 - [x] Plano de implementação do banco de dados
 - [ ] Implementação da API (backend) — login, dashboard, listagem, cadastro e detalhes prontos; edição pendente
-- [ ] Modelagem e criação do banco de dados MySQL
-- [ ] Integração do frontend com a API
-- [ ] Validação de prazo pela API de feriados
+- [x] Modelagem e criação do banco de dados Oracle (`database/`)
+- [ ] Integração do frontend com a API — cadastro de demanda pronto; demais telas pendentes
+- [ ] Migração das rotas para o banco — `/projetos` e `POST /demandas` prontas; demais pendentes
+- [x] Validação de prazo pela API de feriados (no cadastro; falta na edição)
 - [ ] Integração e testes
 - [ ] Release final `1.0.0-final`
 
@@ -391,5 +494,5 @@ comentários explicativos sobre o código.
 
 <p align="center">
   Desenvolvido pelo <strong>Time 2</strong> — Projeto Integrador II · PUC-Campinas · 2026<br>
-  <sub>Última atualização deste documento: 18/10/2026</sub>
+  <sub>Última atualização deste documento: 14/11/2026</sub>
 </p>

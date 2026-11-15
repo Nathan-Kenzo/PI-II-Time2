@@ -210,20 +210,6 @@ function podeCancelar(usuario, demanda) {
 }
 
 /*
- * Projetos que o usuario pode escolher ao criar uma demanda.
- * O Administrador escolhe qualquer projeto; o Lider, apenas os seus.
- */
-function projetosDisponiveis(usuario) {
-  const projetos = listarProjetos();
-  if (!usuario || usuario.perfil === PERFIS.ADMIN) {
-    return projetos;
-  }
-  return projetos.filter(function (projeto) {
-    return vinculadoAoProjeto(usuario, projeto.id);
-  });
-}
-
-/*
  * Mensagem exibida ao usuario explicando por que a tela esta somente leitura.
  * Retorna string vazia quando o usuario pode editar normalmente.
  */

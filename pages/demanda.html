@@ -86,17 +86,10 @@
             <span class="erro-campo" id="erro-descricao"></span>
           </div>
 
-          <!--
-            Tipo da demanda.
-            Alem dos quatro tipos obrigatorios, a equipe incluiu a opcao
-            "Personalizado...", que libera o campo de texto logo abaixo para o
-            usuario escrever um tipo proprio.
-          -->
+          <!-- Tipo da demanda: somente os quatro tipos do documento de visao -->
           <div class="campo" id="campo-tipo">
             <label for="tipo">Tipo *</label>
             <select id="tipo" name="tipo"></select>
-            <input type="text" id="tipo-personalizado" class="oculto" maxlength="40"
-                   placeholder="Escreva o tipo da demanda">
             <span class="erro-campo" id="erro-tipo"></span>
           </div>
 
@@ -142,7 +135,7 @@
             <label>Responsaveis</label>
             <div class="lista-responsaveis" id="lista-responsaveis"></div>
             <span class="ajuda">
-              Pode ficar sem ninguem marcado e ser atribuido depois. Marque quantos forem necessarios.
+              Pode ficar sem ninguem marcado e ser atribuido depois. No cadastro, marque no maximo um.
             </span>
             <span class="erro-campo" id="erro-responsaveis"></span>
           </div>
