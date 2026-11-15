@@ -2,8 +2,10 @@
 <!--
   Autor da estrutura e do layout: Nathan Kenzo Puzipe
   Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
+  Integracao com a API (Reuniao 5): Nathan Kenzo Puzipe
   Descricao: Tela de listagem de demandas. Os filtros e a tabela sao preenchidos
-             em tempo de execucao pelo arquivo js/listagem.js.
+             em tempo de execucao pelo arquivo js/listagem.js, com os dados de
+             GET /demandas (banco de dados).
 -->
 <html lang="pt-BR">
 
@@ -100,6 +102,9 @@
 
         </div>
 
+
+        <!-- Erros devolvidos pela API (400, 401...) ou falta de resposta do servidor -->
+        <p class="resumo-erros" id="aviso-erro" role="alert" hidden></p>
 
         <div class="caixa-tabela">
 
