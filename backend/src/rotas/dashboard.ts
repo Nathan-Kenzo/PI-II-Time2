@@ -1,77 +1,67 @@
 /**
- * Autor: [Felipe Oliveira Barbosa]
+ * Autor: Felipe Oliveira Barbosa
  *
  * Rota do dashboard: GET /dashboard
+ * Lê os indicadores do banco Oracle.
  *
- * Devolve os indicadores da tela inicial:
- *   - total de demandas
- *   - quantidade por status, por prioridade e por tipo
- *   - demandas críticas em aberto
- *   - demandas próximas do prazo
- *
- * Critérios adotados pela equipe:
- *   - "Em aberto": demanda que não está Concluída nem Cancelada.
- *   - "Próximas do prazo": demandas em aberto, com prazo preenchido, que vencem
- *     nos próximos 7 dias. Prazos que já passaram também entram, marcados como
- *     vencidos. O número de dias pode ser trocado com ?dias=N na URL.
+ * Critérios da equipe:
+ *   - "Em aberto": não está Concluída nem Cancelada.
+ *   - "Próximas do prazo": em aberto, com prazo, vencendo nos próximos 7 dias
+ *     (as vencidas também entram). Dá para trocar com ?dias=N.
  */
 
 import { Router, Request, Response } from "express";
-import { demandas, projetos, usuarios } from "../dados/dadosTeste";
-import { Demanda, TIPOS, PRIORIDADES, STATUS } from "../tipos";
+import { executar } from "../bd";
+import { TIPOS, PRIORIDADES, STATUS } from "../tipos";
 
 const router = Router();
 
-// Quantos dias à frente uma demanda entra em "próximas do prazo"
 const DIAS_ALERTA = 7;
 
+const STATUS_ENCERRADOS = { concluida: "Concluída", cancelada: "Cancelada" };
 
-// ---------- Funções de apoio ----------
-
-// Em aberto = ainda não foi concluída nem cancelada
-function estaEmAberto(demanda: Demanda): boolean {
-  return demanda.status !== "Concluída" && demanda.status !== "Cancelada";
+interface LinhaCritica {
+  id: number;
+  titulo: string;
+  projeto: string;
+  responsavel: string | null;
+  status: string;
 }
 
-// "2026-09-25" vira uma data (sem mexer com fuso horário)
-function converterData(texto: string): Date {
-  const partes = texto.split("-");
-  return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+interface LinhaProxima {
+  id: number;
+  titulo: string;
+  prazo: string;
+  vencida: number; // 1 = prazo já passou, 0 = ainda não
+  prioridade: string;
+  status: string;
 }
 
-// Conta quantas demandas existem para cada valor de um campo.
-// Valores sem nenhuma demanda aparecem com 0.
-function contarPor(lista: Demanda[], campo: "status" | "prioridade" | "tipo", valores: string[]) {
+
+// Conta as demandas por valor de uma coluna (valores sem demanda ficam com 0)
+async function contarPor(coluna: "status" | "prioridade" | "tipo", valores: string[]) {
+  // a coluna vem só dessas três opções, nunca do usuário
+  const resultado = await executar<{ valor: string; quantidade: number }>(
+    `SELECT ${coluna} AS "valor", COUNT(*) AS "quantidade"
+       FROM demanda
+      GROUP BY ${coluna}`
+  );
+  const linhas = resultado.rows || [];
+
   const contagem: { [valor: string]: number } = {};
 
   for (const valor of valores) {
-    contagem[valor] = lista.filter(function (demanda) {
-      return demanda[campo] === valor;
-    }).length;
+    const linha = linhas.find(function (item) {
+      return item.valor === valor;
+    });
+    contagem[valor] = linha ? linha.quantidade : 0;
   }
 
   return contagem;
 }
 
-function nomeDoProjeto(id: number): string {
-  const projeto = projetos.find(function (item) { return item.id === id; });
-  return projeto ? projeto.nome : "-";
-}
 
-// Demanda sem responsável devolve null
-function nomeDoResponsavel(id: number | null): string | null {
-  if (id === null) {
-    return null;
-  }
-  const usuario = usuarios.find(function (item) { return item.id === id; });
-  return usuario ? usuario.nome : null;
-}
-
-
-// ---------- Rota ----------
-
-router.get("/dashboard", function (req: Request, res: Response) {
-  // dias de alerta: padrão 7, ou o valor informado em ?dias=
+router.get("/dashboard", async function (req: Request, res: Response) {
   let diasAlerta = DIAS_ALERTA;
 
   if (req.query.dias !== undefined) {
@@ -86,51 +76,54 @@ router.get("/dashboard", function (req: Request, res: Response) {
     diasAlerta = numero;
   }
 
-  // críticas em aberto
-  const criticas = demandas.filter(function (demanda) {
-    return demanda.prioridade === "Crítica" && estaEmAberto(demanda);
-  }).map(function (demanda) {
+  const resultadoTotal = await executar<{ total: number }>(
+    `SELECT COUNT(*) AS "total" FROM demanda`
+  );
+  const total = resultadoTotal.rows ? resultadoTotal.rows[0].total : 0;
+
+  const resultadoCriticas = await executar<LinhaCritica>(
+    `SELECT d.id AS "id", d.titulo AS "titulo", p.nome AS "projeto",
+            u.nome AS "responsavel", d.status AS "status"
+       FROM demanda d
+       JOIN projeto p ON p.id = d.projeto_id
+       LEFT JOIN usuario u ON u.id = d.responsavel_id
+      WHERE d.prioridade = :prioridade
+        AND d.status NOT IN (:concluida, :cancelada)
+      ORDER BY d.id`,
+    { prioridade: "Crítica", ...STATUS_ENCERRADOS }
+  );
+  const criticas = resultadoCriticas.rows || [];
+
+  // TRUNC(SYSDATE) é a data de hoje no banco, sem a hora
+  const resultadoProximas = await executar<LinhaProxima>(
+    `SELECT d.id AS "id", d.titulo AS "titulo",
+            TO_CHAR(d.prazo, 'YYYY-MM-DD') AS "prazo",
+            CASE WHEN d.prazo < TRUNC(SYSDATE) THEN 1 ELSE 0 END AS "vencida",
+            d.prioridade AS "prioridade", d.status AS "status"
+       FROM demanda d
+      WHERE d.prazo IS NOT NULL
+        AND d.status NOT IN (:concluida, :cancelada)
+        AND d.prazo <= TRUNC(SYSDATE) + :dias
+      ORDER BY d.prazo, d.id`,
+    { ...STATUS_ENCERRADOS, dias: diasAlerta }
+  );
+
+  const proximasDoPrazo = (resultadoProximas.rows || []).map(function (linha) {
     return {
-      id: demanda.id,
-      titulo: demanda.titulo,
-      projeto: nomeDoProjeto(demanda.projetoId),
-      responsavel: nomeDoResponsavel(demanda.responsavelId),
-      status: demanda.status
-    };
-  });
-
-  // próximas do prazo (inclui as vencidas)
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
-  const limite = new Date(hoje);
-  limite.setDate(limite.getDate() + diasAlerta);
-
-  const proximas = demandas.filter(function (demanda) {
-    return demanda.prazo !== null && estaEmAberto(demanda) && converterData(demanda.prazo) <= limite;
-  });
-
-  // as mais urgentes primeiro
-  proximas.sort(function (a, b) {
-    return converterData(a.prazo as string).getTime() - converterData(b.prazo as string).getTime();
-  });
-
-  const proximasDoPrazo = proximas.map(function (demanda) {
-    return {
-      id: demanda.id,
-      titulo: demanda.titulo,
-      prazo: demanda.prazo,
-      vencida: converterData(demanda.prazo as string) < hoje,
-      prioridade: demanda.prioridade,
-      status: demanda.status
+      id: linha.id,
+      titulo: linha.titulo,
+      prazo: linha.prazo,
+      vencida: linha.vencida === 1,
+      prioridade: linha.prioridade,
+      status: linha.status
     };
   });
 
   res.status(200).json({
-    total: demandas.length,
-    porStatus: contarPor(demandas, "status", STATUS),
-    porPrioridade: contarPor(demandas, "prioridade", PRIORIDADES),
-    porTipo: contarPor(demandas, "tipo", TIPOS),
+    total: total,
+    porStatus: await contarPor("status", STATUS),
+    porPrioridade: await contarPor("prioridade", PRIORIDADES),
+    porTipo: await contarPor("tipo", TIPOS),
     criticasEmAberto: criticas,
     diasAlerta: diasAlerta,
     proximasDoPrazo: proximasDoPrazo
