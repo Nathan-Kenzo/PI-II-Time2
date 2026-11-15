@@ -1,14 +1,23 @@
 /**
- * Autor: [Felipe Oliveira Barbosa]
+ * Autor: Felipe Oliveira Barbosa
+ *
+ * Tela de dashboard: busca os indicadores em GET /dashboard e preenche a tela.
+ * Se a API devolver erro ou estiver fora do ar, a mensagem aparece no aviso vermelho.
  */
 
-// Valores aceitos pelo escopo do sistema
-const TIPOS = ["Tarefa", "Defeito", "Melhoria", "Documentação"];
-const PRIORIDADES = ["Crítica", "Alta", "Média", "Baixa"];
-const STATUS = ["Aberta", "Em andamento", "Em revisão", "Concluída", "Cancelada"];
+const API_URL = "http://localhost:3000";
 
-// Classes do CSS (selos coloridos) para cada status e prioridade
-const CLASSE_STATUS = {
+// Id do número de cada status no HTML
+const CARTOES_STATUS = {
+  "Aberta": "metrica-aberta",
+  "Em andamento": "metrica-andamento",
+  "Em revisão": "metrica-revisao",
+  "Concluída": "metrica-concluida",
+  "Cancelada": "metrica-cancelada"
+};
+
+// Classes do CSS (selos coloridos)
+const SELO_STATUS = {
   "Aberta": "selo-aberta",
   "Em andamento": "selo-andamento",
   "Em revisão": "selo-revisao",
@@ -16,136 +25,108 @@ const CLASSE_STATUS = {
   "Cancelada": "selo-cancelada"
 };
 
-const CLASSE_PRIORIDADE = {
+const SELO_PRIORIDADE = {
   "Crítica": "selo-critica",
   "Alta": "selo-alta",
   "Média": "selo-media",
   "Baixa": "selo-baixa"
 };
 
-// Quantos dias à frente uma demanda entra em "próximas do prazo"
-const DIAS_ALERTA = 7;
+// Cor das barras de prioridade (as de tipo usam a cor padrão)
+const COR_PRIORIDADE = {
+  "Crítica": "var(--prioridade-critica)",
+  "Alta": "var(--prioridade-alta)",
+  "Média": "var(--prioridade-media)",
+  "Baixa": "var(--prioridade-baixa)"
+};
+
+const COR_PADRAO = "var(--cor-primaria)";
 
 
-const demandas = [
-  { titulo: "Corrigir erro no login", tipo: "Defeito", prioridade: "Crítica", status: "Aberta", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-25" },
-  { titulo: "Falha ao salvar demanda", tipo: "Defeito", prioridade: "Crítica", status: "Em andamento", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-22" },
-  { titulo: "Criar tela de dashboard", tipo: "Tarefa", prioridade: "Alta", status: "Em andamento", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-24" },
-  { titulo: "Documentar rotas da API", tipo: "Documentação", prioridade: "Média", status: "Em revisão", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-09-30" },
-  { titulo: "Ajustar espaçamento do menu", tipo: "Melhoria", prioridade: "Baixa", status: "Concluída", projeto: "DemandaTrack", responsavel: "Exemplo", prazo: "2026-08-25" },
-  { titulo: "Cadastro duplicado de usuário", tipo: "Defeito", prioridade: "Alta", status: "Cancelada", projeto: "DemandaTrack", responsavel: "", prazo: "" }
+// ---------- Aviso de erro ----------
 
-  // Para testar uma demanda inválida, tire o comentário da linha abaixo:
-  // , { titulo: "", tipo: "Bug", prioridade: "Urgente", status: "Aberta", projeto: "DemandaTrack", responsavel: "", prazo: "2026-02-31" }
-];
-
-
-// ---------- Validações ----------
-
-// Confere se o texto é uma data real no formato AAAA-MM-DD
-function dataValida(texto) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
-    return false;
-  }
-
-  const partes = texto.split("-");
-  const ano = Number(partes[0]);
-  const mes = Number(partes[1]);
-  const dia = Number(partes[2]);
-
-  // se o dia não existir no mês (ex: 31/02), o Date "corrige" e os valores mudam
-  const data = new Date(ano, mes - 1, dia);
-  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+function mostrarAviso(mensagem) {
+  const aviso = document.getElementById("aviso-dados");
+  aviso.textContent = mensagem;
+  aviso.hidden = false;
 }
 
-// Devolve a lista de erros da demanda (lista vazia = demanda válida)
-function validarDemanda(demanda) {
-  const erros = [];
-
-  if (typeof demanda.titulo !== "string" || demanda.titulo.trim() === "") {
-    erros.push("título vazio");
-  }
-  if (!TIPOS.includes(demanda.tipo)) {
-    erros.push("tipo inválido (" + demanda.tipo + ")");
-  }
-  if (!PRIORIDADES.includes(demanda.prioridade)) {
-    erros.push("prioridade inválida (" + demanda.prioridade + ")");
-  }
-  if (!STATUS.includes(demanda.status)) {
-    erros.push("status inválido (" + demanda.status + ")");
-  }
-  if (typeof demanda.projeto !== "string" || demanda.projeto.trim() === "") {
-    erros.push("projeto vazio");
-  }
-
-  // o prazo é opcional, mas se vier preenchido tem que ser uma data real
-  if (demanda.prazo && !dataValida(demanda.prazo)) {
-    erros.push("prazo inválido (" + demanda.prazo + ")");
-  }
-
-  return erros;
+function limparAviso() {
+  const aviso = document.getElementById("aviso-dados");
+  aviso.textContent = "";
+  aviso.hidden = true;
 }
 
+// A API devolve erros no formato { erro: "...", detalhes: ["..."] }
+function montarMensagemErro(dados, codigo) {
+  let mensagem = "Erro ao carregar o dashboard";
 
-// ---------- Funções de apoio ----------
+  if (dados && dados.erro) {
+    mensagem = dados.erro;
+  }
 
-function converterData(texto) {
-  const partes = texto.split("-");
-  return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
-}
+  if (dados && Array.isArray(dados.detalhes) && dados.detalhes.length > 0) {
+    mensagem += ": " + dados.detalhes.join(" ");
+  }
 
-// "2026-09-25" vira "25/09/2026"
-function formatarData(texto) {
-  const partes = texto.split("-");
-  return partes[2] + "/" + partes[1] + "/" + partes[0];
-}
-
-function contar(lista, campo, valor) {
-  return lista.filter(function (demanda) {
-    return demanda[campo] === valor;
-  }).length;
-}
-
-// Em aberto = ainda não foi concluída nem cancelada
-function estaEmAberto(demanda) {
-  return demanda.status !== "Concluída" && demanda.status !== "Cancelada";
+  return mensagem + " (código " + codigo + ")";
 }
 
 
 // ---------- Preenchimento da tela ----------
 
-function preencherNumeros(lista) {
-  document.getElementById("num-total").textContent = lista.length;
-  document.getElementById("num-abertas").textContent = contar(lista, "status", "Aberta");
-  document.getElementById("num-andamento").textContent = contar(lista, "status", "Em andamento");
-  document.getElementById("num-revisao").textContent = contar(lista, "status", "Em revisão");
-  document.getElementById("num-concluidas").textContent = contar(lista, "status", "Concluída");
-  document.getElementById("num-canceladas").textContent = contar(lista, "status", "Cancelada");
-}
+function preencherNumeros(dados) {
+  document.getElementById("metrica-total").textContent = dados.total;
 
-// Preenche as barras de um card. O rótulo de cada barra ("Alta", "Tarefa"...)
-// é usado para saber qual valor contar.
-function preencherBarras(idCard, campo, lista) {
-  const itens = document.querySelectorAll("#" + idCard + " .barra-item");
-
-  for (const item of itens) {
-    const rotulo = item.querySelector(".barra-rotulo").textContent;
-    const quantidade = contar(lista, campo, rotulo);
-
-    let porcentagem = 0;
-    if (lista.length > 0) {
-      porcentagem = (quantidade / lista.length) * 100;
-    }
-
-    item.querySelector(".barra-preenchida").style.width = porcentagem + "%";
-    item.querySelector(".barra-valor").textContent = quantidade;
+  for (const status of Object.keys(CARTOES_STATUS)) {
+    const quantidade = dados.porStatus[status] || 0;
+    document.getElementById(CARTOES_STATUS[status]).textContent = quantidade;
   }
 }
 
-// Cada linha é uma lista de células. A célula pode ser um texto simples
-// ou um objeto { texto, selo } quando precisa do selo colorido.
-function preencherTabela(idTabela, linhas, mensagemVazia) {
-  const corpo = document.getElementById(idTabela);
+// Cria uma barra para cada item da contagem, ex: { "Alta": 3, "Baixa": 2 }
+function preencherBarras(idContainer, contagem, cores, total) {
+  const container = document.getElementById(idContainer);
+  container.innerHTML = "";
+
+  for (const rotulo of Object.keys(contagem)) {
+    const quantidade = contagem[rotulo];
+
+    let porcentagem = 0;
+    if (total > 0) {
+      porcentagem = (quantidade / total) * 100;
+    }
+
+    const item = document.createElement("div");
+    item.className = "barra-item";
+
+    const textoRotulo = document.createElement("span");
+    textoRotulo.className = "barra-rotulo";
+    textoRotulo.textContent = rotulo;
+
+    const fundo = document.createElement("div");
+    fundo.className = "barra-fundo";
+
+    const preenchida = document.createElement("div");
+    preenchida.className = "barra-preenchida";
+    preenchida.style.width = porcentagem + "%";
+    preenchida.style.backgroundColor = cores[rotulo] || COR_PADRAO;
+    fundo.appendChild(preenchida);
+
+    const valor = document.createElement("span");
+    valor.className = "barra-valor";
+    valor.textContent = quantidade;
+
+    item.appendChild(textoRotulo);
+    item.appendChild(fundo);
+    item.appendChild(valor);
+    container.appendChild(item);
+  }
+}
+
+// Cada célula é um texto ou um objeto { texto, selo } quando precisa do selo colorido
+function preencherTabela(idCorpo, linhas, mensagemVazia) {
+  const corpo = document.getElementById(idCorpo);
   corpo.innerHTML = "";
 
   if (linhas.length === 0) {
@@ -181,89 +162,98 @@ function preencherTabela(idTabela, linhas, mensagemVazia) {
   }
 }
 
-function preencherCriticas(lista) {
-  const criticas = lista.filter(function (demanda) {
-    return demanda.prioridade === "Crítica" && estaEmAberto(demanda);
-  });
-
+function preencherCriticas(criticas) {
   const linhas = criticas.map(function (demanda) {
     return [
       demanda.titulo,
       demanda.projeto,
       demanda.responsavel || "-",
-      { texto: demanda.status, selo: CLASSE_STATUS[demanda.status] }
+      { texto: demanda.status, selo: SELO_STATUS[demanda.status] }
     ];
   });
 
-  preencherTabela("tabela-criticas", linhas, "Nenhuma demanda crítica em aberto");
+  preencherTabela("corpo-criticas", linhas, "Nenhuma demanda crítica em aberto");
 }
 
-// Demandas em aberto com prazo dentro dos próximos DIAS_ALERTA dias.
-// Prazos que já passaram também entram, marcados como vencidos.
-function preencherProximasDoPrazo(lista) {
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
-  const limite = new Date(hoje);
-  limite.setDate(limite.getDate() + DIAS_ALERTA);
-
-  const proximas = lista.filter(function (demanda) {
-    return demanda.prazo && estaEmAberto(demanda) && converterData(demanda.prazo) <= limite;
-  });
-
-  // as mais urgentes primeiro
-  proximas.sort(function (a, b) {
-    return converterData(a.prazo) - converterData(b.prazo);
-  });
-
+function preencherProximasDoPrazo(proximas, diasAlerta) {
   const linhas = proximas.map(function (demanda) {
+    // formatarData está em js/formato.js
     let textoPrazo = formatarData(demanda.prazo);
-    if (converterData(demanda.prazo) < hoje) {
+    if (demanda.vencida) {
       textoPrazo += " (vencido)";
     }
 
     return [
       demanda.titulo,
       textoPrazo,
-      { texto: demanda.prioridade, selo: CLASSE_PRIORIDADE[demanda.prioridade] },
-      { texto: demanda.status, selo: CLASSE_STATUS[demanda.status] }
+      { texto: demanda.prioridade, selo: SELO_PRIORIDADE[demanda.prioridade] },
+      { texto: demanda.status, selo: SELO_STATUS[demanda.status] }
     ];
   });
 
-  preencherTabela("tabela-prazo", linhas, "Nenhuma demanda próxima do prazo");
+  preencherTabela("corpo-prazo", linhas, "Nenhuma demanda com prazo nos próximos " + diasAlerta + " dias");
+}
+
+function preencherTela(dados) {
+  preencherNumeros(dados);
+  preencherBarras("barras-prioridade", dados.porPrioridade, COR_PRIORIDADE, dados.total);
+  preencherBarras("barras-tipo", dados.porTipo, {}, dados.total);
+  preencherCriticas(dados.criticasEmAberto);
+  preencherProximasDoPrazo(dados.proximasDoPrazo, dados.diasAlerta);
+}
+
+// Usada quando a API falha, para não deixar números antigos na tela
+function limparTela() {
+  document.getElementById("metrica-total").textContent = "-";
+
+  for (const status of Object.keys(CARTOES_STATUS)) {
+    document.getElementById(CARTOES_STATUS[status]).textContent = "-";
+  }
+
+  document.getElementById("barras-prioridade").innerHTML = "";
+  document.getElementById("barras-tipo").innerHTML = "";
+  preencherTabela("corpo-criticas", [], "Sem dados");
+  preencherTabela("corpo-prazo", [], "Sem dados");
 }
 
 
-// ---------- Início ----------
+// ---------- Chamada à API ----------
 
-function iniciarDashboard() {
-  const validas = [];
-  let invalidas = 0;
+async function carregarDashboard() {
+  limparAviso();
 
-  // separa as demandas válidas das inválidas
-  for (const demanda of demandas) {
-    const erros = validarDemanda(demanda);
-
-    if (erros.length === 0) {
-      validas.push(demanda);
-    } else {
-      invalidas++;
-      console.warn("Demanda ignorada (" + demanda.titulo + "): " + erros.join(", "));
-    }
+  // falha aqui = API fora do ar
+  let resposta;
+  try {
+    resposta = await fetch(API_URL + "/dashboard");
+  } catch (erro) {
+    console.error("Falha ao chamar a API:", erro);
+    mostrarAviso("Não foi possível conectar à API. Confira se o backend está rodando em " + API_URL + ".");
+    limparTela();
+    return;
   }
 
-  // demandas inválidas não entram nas contagens, mas o usuário é avisado
-  if (invalidas > 0) {
-    const aviso = document.getElementById("aviso-dados");
-    aviso.textContent = invalidas + " demanda(s) com dados inválidos foram ignoradas no resumo.";
-    aviso.hidden = false;
+  let dados = null;
+  try {
+    dados = await resposta.json();
+  } catch (erro) {
+    dados = null;
   }
 
-  preencherNumeros(validas);
-  preencherBarras("card-prioridade", "prioridade", validas);
-  preencherBarras("card-tipo", "tipo", validas);
-  preencherCriticas(validas);
-  preencherProximasDoPrazo(validas);
+  // a API respondeu com erro (400, 401, 404, 500...)
+  if (!resposta.ok) {
+    mostrarAviso(montarMensagemErro(dados, resposta.status));
+    limparTela();
+    return;
+  }
+
+  if (dados === null) {
+    mostrarAviso("A API devolveu uma resposta inesperada.");
+    limparTela();
+    return;
+  }
+
+  preencherTela(dados);
 }
 
-iniciarDashboard();
+carregarDashboard();
