@@ -13,8 +13,11 @@
  * Integracao com a API (Reuniao 5):
  *   - os projetos do campo de selecao vem de GET /projetos (banco de dados);
  *   - o cadastro envia os dados para POST /demandas, que grava no banco;
+ *   - a lista de responsaveis vem de GET /usuarios;
+ *   - a edicao carrega a demanda, os comentarios e o historico de GET /demandas/:id
+ *     e grava com PATCH /demandas/:id; o historico e registrado pelo servidor;
+ *   - o comentario novo vai para POST /demandas/:id/comentarios;
  *   - as mensagens de erro devolvidas pela API (400, 403, 404...) aparecem na tela.
- * A edicao ainda usa os dados locais de js/dados.js ate a rota de edicao existir.
  */
 
 /* Endereco da API do DemandaTrack (backend/, iniciado com "npm run dev"). */
@@ -47,12 +50,13 @@ document.addEventListener('DOMContentLoaded', async function () {
   const id = parametros.get('id');
 
   if (id) {
-    demandaAtual = buscarDemanda(id);
-    if (!demandaAtual) {
-      mostrarAviso('aviso-erro', 'Demanda nao encontrada. Verifique o endereco utilizado.');
+    const carga = await carregarDemanda(id);
+    if (!carga.ok) {
+      mostrarAviso('aviso-erro', 'Nao foi possivel abrir a demanda. ' + carga.mensagem);
       document.getElementById('card-formulario').classList.add('oculto');
       return;
     }
+    demandaAtual = carga.demanda;
     prepararModoEdicao();
   } else {
     prepararModoCriacao();
@@ -74,7 +78,7 @@ async function montarListasFixas() {
   preencherSelect('tipo', TIPOS);
   preencherSelect('prioridade', PRIORIDADES);
 
-  montarListaDeResponsaveis();
+  await montarListaDeResponsaveis();
 
   // Os projetos vem do banco de dados, pela rota GET /projetos da API.
   // O usuario so pode associar a demanda a um projeto ao qual tem acesso.
@@ -129,14 +133,51 @@ async function chamarApi(metodo, caminho, corpo) {
 }
 
 /*
- * Monta uma caixa de marcacao para cada usuario do sistema.
- * A demanda pode ter nenhum, um ou varios responsaveis.
+ * Busca no banco a demanda da URL, com os comentarios e o historico.
+ * Devolve { ok: true, demanda } ou { ok: false, mensagem }.
+ *
+ * O banco grava tipo, prioridade e status com acento ("Em revisão"); as regras
+ * de js/permissoes.js comparam sem acento, por isso os tres sao convertidos.
+ * Na gravacao a API aceita os dois jeitos.
  */
-function montarListaDeResponsaveis() {
+async function carregarDemanda(id) {
+  const caminho = '/demandas/' + encodeURIComponent(id);
+  const respostas = await Promise.all([
+    chamarApi('GET', caminho),
+    chamarApi('GET', caminho + '/comentarios'),
+    chamarApi('GET', caminho + '/historico')
+  ]);
+
+  const falha = respostas.find(function (resposta) { return !resposta.ok; });
+  if (falha) {
+    return { ok: false, mensagem: falha.mensagem };
+  }
+
+  const demanda = respostas[0].dados.demanda;
+  demanda.tipo = semAcento(demanda.tipo);
+  demanda.prioridade = semAcento(demanda.prioridade);
+  demanda.status = semAcento(demanda.status);
+  demanda.responsaveisIds = demanda.responsavelId ? [demanda.responsavelId] : [];
+  demanda.comentarios = respostas[1].dados.comentarios;
+  demanda.historico = respostas[2].dados.historico;
+  return { ok: true, demanda: demanda };
+}
+
+/*
+ * Monta uma caixa de marcacao para cada usuario cadastrado no banco (GET /usuarios).
+ * A demanda pode ficar sem responsavel ou ter um.
+ */
+async function montarListaDeResponsaveis() {
   const lista = document.getElementById('lista-responsaveis');
   lista.innerHTML = '';
 
-  listarUsuarios().forEach(function (item) {
+  const resposta = await chamarApi('GET', '/usuarios');
+  if (!resposta.ok) {
+    mostrarAviso('aviso-erro', 'Nao foi possivel carregar os usuarios. ' + resposta.mensagem);
+    return;
+  }
+
+  resposta.dados.forEach(function (item) {
     const opcao = document.createElement('label');
     opcao.className = 'opcao-responsavel';
 
@@ -270,10 +311,9 @@ function preencherFormulario() {
    */
   const selectProjeto = document.getElementById('projeto');
   if (!selectProjeto.querySelector('option[value="' + demandaAtual.projetoId + '"]')) {
-    const projeto = buscarProjeto(demandaAtual.projetoId);
     const opcao = document.createElement('option');
     opcao.value = demandaAtual.projetoId;
-    opcao.textContent = projeto ? projeto.nome : 'Projeto ' + demandaAtual.projetoId;
+    opcao.textContent = demandaAtual.projeto;
     selectProjeto.appendChild(opcao);
   }
   selectProjeto.value = demandaAtual.projetoId;
@@ -413,14 +453,17 @@ async function validarFormulario() {
     valido = false;
   }
 
-  // No cadastro pela API a demanda tem um unico responsavel (pode ficar em branco).
-  // ponytail: a edicao local ainda aceita varios; unificar quando a edicao for para a API.
-  if (!demandaAtual && responsaveisMarcados().length > 1) {
+  // No banco a demanda tem um unico responsavel (pode ficar em branco).
+  if (responsaveisMarcados().length > 1) {
     marcarErro('responsaveis', 'Selecione no maximo um responsavel.');
     valido = false;
   }
 
-  if (prazo) {
+  // Na edicao, o prazo que ja estava gravado nao e conferido de novo: uma demanda
+  // antiga com prazo vencido ainda precisa aceitar mudanca de status.
+  const prazoMudou = !demandaAtual || prazo !== (demandaAtual.prazo || '');
+
+  if (prazo && prazoMudou) {
     // O prazo nao pode ser uma data ja passada.
     if (prazo < dataDeHoje()) {
       marcarErro('prazo', 'O prazo de finalizacao nao pode ser uma data passada.');
@@ -494,13 +537,18 @@ async function aoSalvar(evento) {
     }
 
     if (demandaAtual) {
-      atualizarDemanda();
+      await atualizarDemanda();
     } else {
       await criarDemanda();
     }
   } finally {
     botao.disabled = false;
     botao.textContent = 'Salvar demanda';
+    // Na edicao o botao volta ao estado que as permissoes mandam
+    // (uma demanda recem-concluida, por exemplo, nao aceita mais gravacao).
+    if (demandaAtual) {
+      aplicarPermissoes();
+    }
   }
 }
 
@@ -543,102 +591,34 @@ async function criarDemanda() {
 }
 
 /*
- * Atualiza a demanda existente.
- * Cada alteracao relevante gera automaticamente um registro no historico e
- * a data da ultima atualizacao e regravada.
+ * Atualiza a demanda existente com PATCH /demandas/:id.
+ * A tela envia os campos que o perfil pode alterar; o servidor compara com o
+ * que esta gravado, confere permissao e fluxo de status, grava so o que mudou
+ * e registra uma linha de historico para cada campo alterado.
  */
-function atualizarDemanda() {
-  const registros = [];
+async function atualizarDemanda() {
+  const alteracoes = {};
 
-  const novoTitulo = document.getElementById('titulo').value.trim();
-  const novaDescricao = document.getElementById('descricao').value.trim();
-  const novoTipo = document.getElementById('tipo').value;
-  const novaPrioridade = document.getElementById('prioridade').value;
-  const novoPrazo = document.getElementById('prazo').value || null;
-  const novosResponsaveis = responsaveisMarcados();
+  if (podeEditarDemanda(usuario, demandaAtual)) {
+    alteracoes.titulo = document.getElementById('titulo').value.trim();
+    alteracoes.descricao = document.getElementById('descricao').value.trim();
+    alteracoes.tipo = document.getElementById('tipo').value;
+    alteracoes.prioridade = document.getElementById('prioridade').value;
+    alteracoes.prazo = document.getElementById('prazo').value || null;
+    alteracoes.responsavelId = responsaveisMarcados()[0] || null;
+  }
+
   const novoStatus = document.getElementById('status').value;
-
-  const podeEditar = podeEditarDemanda(usuario, demandaAtual);
-
-  // Alteracoes de dados so sao aceitas de quem tem permissao de edicao.
-  if (podeEditar) {
-    if (novoTitulo !== demandaAtual.titulo) {
-      registros.push('alterou o titulo da demanda.');
-      demandaAtual.titulo = novoTitulo;
-    }
-
-    if (novaDescricao !== demandaAtual.descricao) {
-      registros.push('alterou a descricao da demanda.');
-      demandaAtual.descricao = novaDescricao;
-    }
-
-    if (novoTipo !== demandaAtual.tipo) {
-      registros.push('alterou o tipo da demanda de ' + demandaAtual.tipo + ' para ' + novoTipo + '.');
-      demandaAtual.tipo = novoTipo;
-    }
-
-    if (novoPrazo !== demandaAtual.prazo) {
-      registros.push('alterou o prazo de finalizacao de ' +
-        formatarData(demandaAtual.prazo) + ' para ' + formatarData(novoPrazo) + '.');
-      demandaAtual.prazo = novoPrazo;
-    }
-  }
-
-  if (podeAlterarPrioridade(usuario, demandaAtual) && novaPrioridade !== demandaAtual.prioridade) {
-    registros.push('alterou a prioridade da demanda de ' +
-      demandaAtual.prioridade + ' para ' + novaPrioridade + '.');
-    demandaAtual.prioridade = novaPrioridade;
-  }
-
-  if (podeAlterarResponsavel(usuario, demandaAtual)) {
-    const frases = descreverMudancaDeResponsaveis(demandaAtual.responsaveisIds, novosResponsaveis);
-    if (frases.length > 0) {
-      frases.forEach(function (frase) { registros.push(frase); });
-      demandaAtual.responsaveisIds = novosResponsaveis;
-    }
-  }
-
-  // A mudanca de status passa novamente pela verificacao de permissao e de fluxo.
   if (novoStatus !== demandaAtual.status) {
-    if (!podeAlterarStatus(usuario, demandaAtual, novoStatus)) {
-      mostrarAviso('aviso-erro',
-        'Seu perfil nao pode alterar o status de ' + demandaAtual.status + ' para ' + novoStatus + '.');
-      return;
-    }
-    registros.push('alterou o status da demanda de ' + demandaAtual.status + ' para ' + novoStatus + '.');
-    demandaAtual.status = novoStatus;
+    alteracoes.status = novoStatus;
   }
 
-  if (registros.length === 0) {
+  if (Object.keys(alteracoes).length === 0) {
     mostrarAviso('aviso-info', 'Nenhuma alteracao foi identificada.');
     return;
   }
 
-  gravarAlteracoes(registros, 'Demanda atualizada com sucesso.');
-}
-
-/*
- * Compara a lista anterior de responsaveis com a nova e devolve as frases que
- * devem ir para o historico. Uma frase para quem entrou e outra para quem saiu.
- * Retorna uma lista vazia quando nada mudou.
- */
-function descreverMudancaDeResponsaveis(anteriores, novos) {
-  const antes = anteriores || [];
-  const depois = novos || [];
-
-  const incluidos = depois.filter(function (id) { return antes.indexOf(id) < 0; });
-  const removidos = antes.filter(function (id) { return depois.indexOf(id) < 0; });
-
-  const frases = [];
-
-  if (incluidos.length > 0) {
-    frases.push('atribuiu a demanda a ' + nomesUsuarios(incluidos) + '.');
-  }
-  if (removidos.length > 0) {
-    frases.push('removeu ' + nomesUsuarios(removidos) + ' da responsabilidade pela demanda.');
-  }
-
-  return frases;
+  await enviarAlteracoes(alteracoes, 'Demanda atualizada no banco de dados.');
 }
 
 /*
@@ -646,7 +626,7 @@ function descreverMudancaDeResponsaveis(anteriores, novos) {
  * Nao existe exclusao fisica de registros: o cancelamento apenas grava o status
  * Cancelada, preservando todo o historico das atividades.
  */
-function aoCancelarDemanda() {
+async function aoCancelarDemanda() {
   esconderAvisos();
 
   if (!podeCancelar(usuario, demandaAtual)) {
@@ -654,28 +634,36 @@ function aoCancelarDemanda() {
     return;
   }
 
-  demandaAtual.status = STATUS.CANCELADA;
-  gravarAlteracoes(['cancelou a demanda.'], 'Demanda cancelada. O registro e o historico foram preservados.');
+  await enviarAlteracoes({ status: STATUS.CANCELADA },
+    'Demanda cancelada. O registro e o historico foram preservados.');
 }
 
-/* Grava os registros de historico, atualiza a data e redesenha a tela. */
-function gravarAlteracoes(registros, mensagemDeSucesso) {
-  const agora = new Date().toISOString();
+/* Envia as alteracoes para a API, recarrega a demanda do banco e redesenha a tela. */
+async function enviarAlteracoes(alteracoes, mensagemDeSucesso) {
+  alteracoes.usuarioId = usuario.id;
 
-  registros.forEach(function (descricao) {
-    demandaAtual.historico.push({
-      id: proximoIdLista(demandaAtual.historico),
-      usuarioId: usuario.id,
-      descricao: descricao,
-      dataHora: agora
-    });
-  });
+  const resposta = await chamarApi('PATCH', '/demandas/' + demandaAtual.id, alteracoes);
+  if (!resposta.ok) {
+    mostrarAviso('aviso-erro', resposta.mensagem);
+    return;
+  }
 
-  demandaAtual.dataAtualizacao = agora;
-  salvarDemanda(demandaAtual);
+  // Quando nada mudou, a API devolve a demanda com a mesma data de atualizacao.
+  if (resposta.dados.demanda.dataAtualizacao === demandaAtual.dataAtualizacao) {
+    mostrarAviso('aviso-info', 'Nenhuma alteracao foi identificada.');
+    return;
+  }
+
+  const carga = await carregarDemanda(demandaAtual.id);
+  if (carga.ok) {
+    demandaAtual = carga.demanda;
+    redesenharTela();
+  }
 
   mostrarAviso('aviso-sucesso', mensagemDeSucesso);
-  redesenharTela();
+  if (resposta.dados.aviso) {
+    mostrarAviso('aviso-info', resposta.dados.aviso);
+  }
 }
 
 /* Reaplica dados e permissoes apos uma gravacao, sem recarregar a pagina. */
@@ -692,7 +680,7 @@ function redesenharTela() {
    Comentarios
    ========================================================================== */
 
-function aoComentar() {
+async function aoComentar() {
   esconderAvisos();
   limparErros();
 
@@ -709,19 +697,21 @@ function aoComentar() {
     return;
   }
 
-  // Todo comentario guarda o usuario e a data/hora do registro.
-  demandaAtual.comentarios.push({
-    id: proximoIdLista(demandaAtual.comentarios),
+  // O servidor grava o comentario com o usuario e a data/hora do registro.
+  const resposta = await chamarApi('POST', '/demandas/' + demandaAtual.id + '/comentarios', {
     usuarioId: usuario.id,
-    texto: texto,
-    dataHora: new Date().toISOString()
+    texto: texto
   });
+  if (!resposta.ok) {
+    mostrarAviso('aviso-erro', resposta.mensagem);
+    return;
+  }
 
-  salvarDemanda(demandaAtual);
+  demandaAtual.comentarios.push(resposta.dados.comentario);
 
   campo.value = '';
   renderizarComentarios();
-  mostrarAviso('aviso-sucesso', 'Comentario registrado.');
+  mostrarAviso('aviso-sucesso', 'Comentario gravado no banco de dados.');
 }
 
 function renderizarComentarios() {
@@ -745,11 +735,11 @@ function renderizarComentarios() {
 
     const autor = document.createElement('span');
     autor.className = 'comentario-autor';
-    autor.textContent = nomeUsuario(comentario.usuarioId);
+    autor.textContent = comentario.autor;
 
     const data = document.createElement('span');
     data.className = 'comentario-data';
-    data.textContent = formatarDataHora(comentario.dataHora);
+    data.textContent = formatarDataHora(comentario.data);
 
     topo.appendChild(autor);
     topo.appendChild(data);
@@ -790,10 +780,10 @@ function renderizarHistorico() {
 
     const data = document.createElement('span');
     data.className = 'historico-data';
-    data.textContent = formatarDataHora(registro.dataHora);
+    data.textContent = formatarDataHora(registro.data);
 
     const texto = document.createElement('span');
-    texto.textContent = nomeUsuario(registro.usuarioId) + ' ' + registro.descricao;
+    texto.textContent = registro.autor + ' ' + registro.descricao;
 
     item.appendChild(data);
     item.appendChild(texto);

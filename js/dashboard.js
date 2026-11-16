@@ -8,14 +8,10 @@
 const API_URL = "http://localhost:3000";
 
 
-//guardando usuario logado
-const usuarioLogado = JSON.parse(
-    localStorage.getItem("usuario")
-);
-
-        if (!usuario) {
-            window.location.href = "login.html";
-        }
+// sem usuario logado, volta para a tela de login
+if (!localStorage.getItem("usuario")) {
+    window.location.href = "login.html";
+}
 
 // Id do número de cada status no HTML
 const CARTOES_STATUS = {

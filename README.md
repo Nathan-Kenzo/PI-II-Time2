@@ -346,15 +346,18 @@ Rotas disponíveis até o momento:
 
 | Método | Rota | Descrição | Dados |
 |---|---|---|---|
-| `POST` | `/login` | Autenticação por e-mail e senha | memória |
-| `GET` | `/usuarios` | Lista de usuários (sem a senha) | memória |
-| `GET` | `/dashboard` | Indicadores da tela inicial | memória |
-| `GET` | `/demandas` | Listagem com filtros, busca e ordenação | memória |
-| `GET` | `/projetos` | Lista de projetos | **Oracle** |
-| `POST` | `/demandas` | Cadastro de demanda (valida prazo na API de feriados) | **Oracle** |
-| `GET` | `/demandas/:id` | Detalhes de uma demanda | memória |
-| `GET` | `/demandas/:id/comentarios` | Comentários da demanda | memória |
-| `POST` | `/demandas/:id/comentarios` | Registro de comentário (`usuarioId` e `texto`) | memória |
+| `POST` | `/login` | Autenticação por e-mail e senha | Oracle |
+| `GET` | `/usuarios` | Lista de usuários (sem a senha) | Oracle |
+| `POST` | `/usuarios` | Cadastro de usuário (senha gravada como hash) | Oracle |
+| `GET` | `/dashboard` | Indicadores da tela inicial | Oracle |
+| `GET` | `/demandas` | Listagem com filtros, busca e ordenação | Oracle |
+| `GET` | `/projetos` | Lista de projetos | Oracle |
+| `POST` | `/demandas` | Cadastro de demanda (valida prazo na API de feriados) | Oracle |
+| `GET` | `/demandas/:id` | Detalhes de uma demanda | Oracle |
+| `GET` | `/demandas/:id/comentarios` | Comentários da demanda | Oracle |
+| `POST` | `/demandas/:id/comentarios` | Registro de comentário (`usuarioId` e `texto`) | Oracle |
+| `GET` | `/demandas/:id/historico` | Histórico de alterações da demanda | Oracle |
+| `PATCH` | `/demandas/:id` | Edição da demanda (confere permissão e fluxo de status, grava o histórico) | Oracle |
 
 O `POST /demandas` exige o campo `usuarioId` (quem está criando): o Membro da
 Equipe recebe `403`, e o Líder de Projeto só cria nos projetos em que está

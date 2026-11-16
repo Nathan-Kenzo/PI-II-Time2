@@ -250,14 +250,34 @@ function nomesUsuarios(ids) {
   return ids.map(nomeUsuario).join(', ');
 }
 
+/* Tira os acentos de um texto. O banco grava "Em revisão"; as telas comparam com "Em revisao". */
+function semAcento(texto) {
+  return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
 /*
- * Usuario autenticado no momento.
- * Enquanto a tela de login nao esta integrada, o usuario e escolhido na barra
- * de simulacao de perfil e guardado no localStorage.
+ * Usuario autenticado no momento: o que a tela de login guardou no localStorage.
+ * Sem login (tela aberta direto pelo arquivo), assume o primeiro usuario da carga.
  */
+// ponytail: os projetos do usuario ainda vem da tabela local acima; usuario novo
+// fica sem projeto. Trocar quando a API devolver os vinculos junto com o login.
 function usuarioLogado() {
-  const id = localStorage.getItem(CHAVE_USUARIO_LOGADO);
-  return buscarUsuario(id) || USUARIOS_INICIAIS[0];
+  let login = null;
+  try {
+    login = JSON.parse(localStorage.getItem('usuario'));
+  } catch (erro) {
+    login = null;
+  }
+  if (!login) {
+    return USUARIOS_INICIAIS[0];
+  }
+  const local = buscarUsuario(login.id);
+  return {
+    id: login.id,
+    nome: login.nome,
+    perfil: semAcento(login.perfil),
+    projetos: local ? local.projetos : []
+  };
 }
 
 function definirUsuarioLogado(id) {

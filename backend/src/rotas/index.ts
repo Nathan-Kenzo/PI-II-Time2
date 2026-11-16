@@ -12,6 +12,7 @@ import listagemDemandas from "./listagemDemandas";
 import cadastroDemandas from "./cadastroDemandas";
 import detalhesDemandas from "./detalhesDemandas";
 import edicaoDemandas from "./edicaoDemandas";
+import cadastroUsuarios from "./cadastroUsuarios";
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use(listagemDemandas);
 router.use(cadastroDemandas);
 router.use(detalhesDemandas);
 router.use(edicaoDemandas);
+router.use(cadastroUsuarios);
 
 export default router;
