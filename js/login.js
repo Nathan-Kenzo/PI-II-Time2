@@ -5,18 +5,18 @@
  */
 
 const formulario = document.querySelector("#formLogin");
-const campoUser = document.querySelector("#user");
+const campoEmail = document.querySelector("#email");
 const campoSenha = document.querySelector("#senha");
-const erroUser = document.querySelector("#erroUser");
+const erroEmail = document.querySelector("#erroEmail");
 const erroSenha = document.querySelector("#erroSenha");
 
 const camposComErro = [
-    campoUser,
+    campoEmail,
     campoSenha
 ];
 
 const mensagensDeErro = [
-    erroUser,
+    erroEmail,
     erroSenha
 ];
 
@@ -37,22 +37,22 @@ function limparErros() {
     });
 }
 
-formulario.addEventListener("submit", function (event) {
+formulario.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     limparErros();
 
-    const user = campoUser.value.trim();
+    const email = campoEmail.value.trim();
     const senha = campoSenha.value;
 
     let formValido = true;
 
     // validação do nome de usuário
-    if (user === "") {
-        mostrarErro(campoUser, erroUser, "O nome de usuário é obrigatório!");
+    if (email === "") {
+        mostrarErro(campoEmail, erroEmail, "O nome de usuário é obrigatório!");
         formValido = false;
-    } else if (user.length < 3) {
-        mostrarErro(campoUser, erroUser, "O nome de usuário deve possuir pelo menos 3 caracteres!");
+    } else if (email.length < 3) {
+        mostrarErro(campoEmail, erroEmail, "O nome de usuário deve possuir pelo menos 3 caracteres!");
         formValido = false;
     }
 
@@ -67,6 +67,51 @@ formulario.addEventListener("submit", function (event) {
 
     // redireciona para a página inicial quando os dados forem válidos
     if (formValido) {
-        window.location.href = "../index.html";
+        try {
+
+        const resposta = await fetch(
+            "http://localhost:3000/login",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email,
+                    senha
+                })
+            }
+        );
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+
+            mostrarErro(
+                campoEmail,
+                erroEmail,
+                dados.erro || "Erro ao realizar login."
+            );
+
+            return;
+        }
+
+        localStorage.setItem(
+            "usuario",
+            JSON.stringify(dados.usuario)
+        );
+
+        window.location.href = "dashboard.html";
+
+    } catch (erro) {
+
+        mostrarErro(
+            campoEmail,
+            erroEmail,
+            "Não foi possível conectar ao servidor."
+        );
+
+        console.error(erro);
+    }
     }
 });
