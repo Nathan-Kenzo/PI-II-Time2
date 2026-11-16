@@ -1,146 +1,134 @@
 /**
  * Autor: Henrique Aguiar de Souza Pella
- *
- * Rotas de detalhes da demanda e comentários:
- *   GET  /demandas/:id               dados completos de uma demanda
- *   GET  /demandas/:id/comentarios   comentários da demanda, do mais antigo ao mais novo
- *   POST /demandas/:id/comentarios   registra um comentário
- *
- * As regras são as mesmas da tela (js/permissoes.js e js/demanda.js), repetidas
- * aqui porque a API não confia no que vem do navegador:
- *   - comenta quem enxerga a demanda: Administrador ou usuário vinculado ao projeto;
- *   - o comentário precisa ter pelo menos 3 caracteres;
- *   - a data e hora do comentário são definidas pelo servidor.
  */
 
 import { Router, Request, Response } from "express";
-import { usuarios, projetos, demandas, comentarios } from "../dados/dadosTeste";
-import { Comentario, Demanda } from "../tipos";
+import { executar, SAIDA_NUMERO } from "../bd";
+import {
+  UsuarioNoProjeto,
+  ErroDeRequisicao,
+  comTratamentoDeErros,
+  lerTexto,
+  exigirObjetoJson,
+  temAcessoAoProjeto,
+  buscarAutor,
+  buscarDemandaDaUrl
+} from "./apoioDemandas";
 
 const router = Router();
 
 const COMENTARIO_MIN = 3;
+const COMENTARIO_MAX = 2000;
 
+const SQL_COMENTARIOS = `
+  SELECT c.id AS "id", c.demanda_id AS "demandaId", c.usuario_id AS "usuarioId",
+         u.nome AS "autor", c.texto AS "texto", c.data_hora AS "data"
+    FROM comentario c
+    JOIN usuario u ON u.id = c.usuario_id`;
 
-// ---------- Funções de apoio ----------
-
-// Procura a demanda do :id da URL. Se não achar, já responde o erro e devolve undefined
-function buscarDemanda(req: Request, res: Response): Demanda | undefined {
-  const id = String(req.params.id);
-
-  if (!/^\d+$/.test(id)) {
-    res.status(400).json({ erro: "O id da demanda deve ser um número inteiro." });
-    return undefined;
-  }
-
-  const demanda = demandas.find(function (d) { return d.id === Number(id); });
-  if (!demanda) {
-    res.status(404).json({ erro: "Demanda não encontrada." });
-    return undefined;
-  }
-
-  return demanda;
+interface ComentarioGravado {
+  id: number;
+  demandaId: number;
+  usuarioId: number;
+  autor: string;
+  texto: string;
+  data: Date;
 }
 
-function nomeDoUsuario(id: number | null): string | null {
-  const usuario = usuarios.find(function (u) { return u.id === id; });
-  return usuario ? usuario.nome : null;
-}
-
-// Acrescenta o nome do autor, para a tela não precisar buscar a lista de usuários
-function comAutor(comentario: Comentario) {
-  return { ...comentario, autor: nomeDoUsuario(comentario.usuarioId) };
+interface RegistroDeHistorico {
+  id: number;
+  demandaId: number;
+  usuarioId: number;
+  autor: string;
+  descricao: string;
+  data: Date;
 }
 
 
-// ---------- GET /demandas/:id ----------
+async function listarComentarios(demandaId: number): Promise<ComentarioGravado[]> {
+  const resultado = await executar<ComentarioGravado>(
+    `${SQL_COMENTARIOS} WHERE c.demanda_id = :demandaId ORDER BY c.data_hora, c.id`,
+    { demandaId }
+  );
+  return resultado.rows ?? [];
+}
 
-router.get("/demandas/:id", function (req: Request, res: Response) {
-  const demanda = buscarDemanda(req, res);
-  if (!demanda) {
-    return;
-  }
+async function buscarComentario(id: number): Promise<ComentarioGravado | undefined> {
+  const resultado = await executar<ComentarioGravado>(`${SQL_COMENTARIOS} WHERE c.id = :id`, { id });
+  return resultado.rows?.[0];
+}
 
-  const projeto = projetos.find(function (p) { return p.id === demanda.projetoId; });
+async function listarHistorico(demandaId: number): Promise<RegistroDeHistorico[]> {
+  const resultado = await executar<RegistroDeHistorico>(
+    `SELECT h.id AS "id", h.demanda_id AS "demandaId", h.usuario_id AS "usuarioId",
+            u.nome AS "autor", h.descricao AS "descricao", h.data_hora AS "data"
+       FROM historico h
+       JOIN usuario u ON u.id = h.usuario_id
+      WHERE h.demanda_id = :demandaId
+      ORDER BY h.data_hora, h.id`,
+    { demandaId }
+  );
+  return resultado.rows ?? [];
+}
 
-  res.status(200).json({
-    demanda: {
-      ...demanda,
-      projeto: projeto ? projeto.nome : null,
-      responsavel: nomeDoUsuario(demanda.responsavelId)
-    }
-  });
-});
+async function inserirComentario(demandaId: number, usuarioId: number, texto: string): Promise<number> {
+  const insercao = await executar(
+    `INSERT INTO comentario (demanda_id, usuario_id, texto)
+     VALUES (:demandaId, :usuarioId, :texto)
+     RETURNING id INTO :id`,
+    { demandaId, usuarioId, texto, id: SAIDA_NUMERO }
+  );
+  return insercao.outBinds.id[0];
+}
 
-
-// ---------- GET /demandas/:id/comentarios ----------
-
-router.get("/demandas/:id/comentarios", function (req: Request, res: Response) {
-  const demanda = buscarDemanda(req, res);
-  if (!demanda) {
-    return;
-  }
-
-  const lista = comentarios
-    .filter(function (c) { return c.demandaId === demanda.id; })
-    .map(comAutor);
-
-  res.status(200).json({ total: lista.length, comentarios: lista });
-});
-
-
-// ---------- POST /demandas/:id/comentarios ----------
-
-router.post("/demandas/:id/comentarios", function (req: Request, res: Response) {
-  const demanda = buscarDemanda(req, res);
-  if (!demanda) {
-    return;
-  }
-
-  const corpo = req.body;
-  if (!corpo || typeof corpo !== "object" || Array.isArray(corpo)) {
-    res.status(400).json({ erro: "Corpo da requisição deve ser um objeto JSON." });
-    return;
-  }
-
+function listarErrosDoComentario(autor: UsuarioNoProjeto | undefined, texto: string): string[] {
   const erros: string[] = [];
-
-  // ponytail: o autor vem no corpo porque ainda não há sessão de login.
-  // Quando houver, ele passa a ser o usuário logado e este campo sai.
-  // Aceita o id como número (3) ou texto ("3"); true, [3] ou "3.0" não valem
-  const idInformado = typeof corpo.usuarioId === "string" ? corpo.usuarioId.trim() : corpo.usuarioId;
-  const usuario = usuarios.find(function (u) { return u.id === idInformado || String(u.id) === idInformado; });
-  if (!usuario) {
+  if (!autor) {
     erros.push("usuarioId deve ser o id de um usuário existente.");
   }
-
-  const texto = typeof corpo.texto === "string" ? corpo.texto.trim() : "";
   if (texto.length < COMENTARIO_MIN) {
-    erros.push("texto deve ter pelo menos " + COMENTARIO_MIN + " caracteres.");
+    erros.push(`texto deve ter pelo menos ${COMENTARIO_MIN} caracteres.`);
   }
-
-  if (erros.length > 0) {
-    res.status(400).json({ erro: "Dados inválidos", detalhes: erros });
-    return;
+  if (texto.length > COMENTARIO_MAX) {
+    erros.push(`texto deve ter no máximo ${COMENTARIO_MAX} caracteres.`);
   }
+  return erros;
+}
 
-  // Mesma regra de podeComentar() da tela: só comenta quem enxerga a demanda
-  if (usuario!.perfil !== "Administrador" && !usuario!.projetos.includes(demanda.projetoId)) {
-    res.status(403).json({ erro: "O usuário não está vinculado ao projeto desta demanda." });
-    return;
+async function registrarComentario(idDaUrl: unknown, corpo: unknown): Promise<ComentarioGravado | undefined> {
+  const demanda = await buscarDemandaDaUrl(idDaUrl);
+  const dados = exigirObjetoJson(corpo);
+  const autor = await buscarAutor(dados.usuarioId, demanda.projetoId);
+  const texto = lerTexto(dados.texto) ?? "";
+  const erros = listarErrosDoComentario(autor, texto);
+  if (!autor || erros.length > 0) {
+    throw new ErroDeRequisicao(400, "Dados inválidos", erros);
   }
+  if (!temAcessoAoProjeto(autor)) {
+    throw new ErroDeRequisicao(403, "O usuário não está vinculado ao projeto desta demanda.");
+  }
+  return buscarComentario(await inserirComentario(demanda.id, autor.id, texto));
+}
 
-  const novo: Comentario = {
-    id: comentarios.reduce(function (maior, c) { return c.id > maior ? c.id : maior; }, 0) + 1,
-    demandaId: demanda.id,
-    usuarioId: usuario!.id,
-    texto: texto,
-    data: new Date().toISOString()
-  };
 
-  comentarios.push(novo);
+router.get("/demandas/:id", comTratamentoDeErros(async function (req: Request, res: Response) {
+  res.status(200).json({ demanda: await buscarDemandaDaUrl(req.params.id) });
+}));
 
-  res.status(201).json({ comentario: comAutor(novo) });
-});
+router.get("/demandas/:id/comentarios", comTratamentoDeErros(async function (req: Request, res: Response) {
+  const demanda = await buscarDemandaDaUrl(req.params.id);
+  const comentarios = await listarComentarios(demanda.id);
+  res.status(200).json({ total: comentarios.length, comentarios });
+}));
+
+router.post("/demandas/:id/comentarios", comTratamentoDeErros(async function (req: Request, res: Response) {
+  res.status(201).json({ comentario: await registrarComentario(req.params.id, req.body) });
+}));
+
+router.get("/demandas/:id/historico", comTratamentoDeErros(async function (req: Request, res: Response) {
+  const demanda = await buscarDemandaDaUrl(req.params.id);
+  const historico = await listarHistorico(demanda.id);
+  res.status(200).json({ total: historico.length, historico });
+}));
 
 export default router;
