@@ -51,7 +51,7 @@ function limparErros() {
     });
 }
 
-formulario.addEventListener("submit", function (event) {
+formulario.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     limparErros();
@@ -116,8 +116,29 @@ formulario.addEventListener("submit", function (event) {
         formValido = false;
     }
 
-    // redireciona para a tela de login quando o cadastro for válido
-    if (formValido) {
+    if (!formValido) {
+        return;
+    }
+
+    // grava o usuário no banco pela API; o nome de usuário não é enviado
+    // porque a tabela usuario não tem essa coluna (o login é pelo e-mail)
+    try {
+        const resposta = await fetch("http://localhost:3000/usuarios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nome, email, senha })
+        });
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            const detalhes = Array.isArray(dados.detalhes) ? " " + dados.detalhes.join(" ") : "";
+            mostrarErro(campoEmail, erroEmail, (dados.erro || "Erro ao cadastrar.") + detalhes);
+            return;
+        }
+
+        // cadastro gravado: segue para a tela de login
         window.location.href = "login.html";
+    } catch (erro) {
+        mostrarErro(campoEmail, erroEmail, "A API não respondeu. Confira se o servidor está rodando.");
     }
 });
