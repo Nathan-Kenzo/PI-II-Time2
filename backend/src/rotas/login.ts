@@ -7,7 +7,16 @@
  */
 
 import { Router, Request, Response } from "express";
-import { usuarios } from "../dados/dadosTeste";
+import { executar } from "../bd";
+import { conferirSenha } from "../senha";
+
+type UsuarioLogin = {
+  id: number;
+  nome: string;
+  email: string;
+  senha: string;
+  perfil: string;
+};
 
 const router = Router();
 
@@ -15,7 +24,7 @@ const router = Router();
 // funções de apoio
 
 // remove a senha antes de devolver os dados do usuario
-function semSenha(usuario: typeof usuarios[number]) {
+function semSenha(usuario: UsuarioLogin) {
   const { senha, ...dadosUsuario } = usuario;
   return dadosUsuario;
 }
@@ -23,61 +32,114 @@ function semSenha(usuario: typeof usuarios[number]) {
 
 // rotas
 
-router.get("/usuarios", function (req: Request, res: Response) {
+router.get("/usuarios", async function (req: Request, res: Response) {
 
-  const listaUsuarios = usuarios.map(function (usuario) {
-    return semSenha(usuario);
-  });
+  try {
+      const resultado = await executar<UsuarioLogin>(
+      `
+      SELECT
+          id     AS "id",
+          nome   AS "nome",
+          email  AS "email",
+          senha  AS "senha",
+          perfil AS "perfil"
+      FROM usuario
+      `
+      );
 
-  res.status(200).json(listaUsuarios);
+      const usuarios = resultado.rows ?? [];
+
+      res.status(200).json(
+        usuarios.map(semSenha)
+      );
+  } catch (erro) {
+
+    console.error(erro);
+
+    res.status(500).json({
+      erro: "Erro interno do servidor"
+    });
+
+  }
 });
 
 
-router.post("/login", function (req: Request, res: Response) {
+router.post("/login", async function (req: Request, res: Response) {
+  try {
+      const erros: string[] = [];
 
-  const erros: string[] = [];
+      // leitura dos dados
 
-  // leitura dos dados
+      const email = req.body.email;
+      const senha = req.body.senha;
 
-  const email = req.body.email;
-  const senha = req.body.senha;
+      // validação
 
-  // validação
+      if (!email) {
+        erros.push("O campo e-mail é obrigatório.");
+      }
 
-  if (!email) {
-    erros.push("O campo e-mail é obrigatório.");
-  }
+      if (!senha) {
+        erros.push("O campo senha é obrigatório.");
+      }
 
-  if (!senha) {
-    erros.push("O campo senha é obrigatório.");
-  }
+      if (erros.length > 0) {
+        res.status(400).json({
+          erro: "Dados inválidos",
+          detalhes: erros
+        });
+        return;
+      }
 
-  if (erros.length > 0) {
-    res.status(400).json({
-      erro: "Dados inválidos",
-      detalhes: erros
+      // verificação das credenciais
+
+      const resultado = await executar<UsuarioLogin>(
+    `
+    SELECT
+        id      AS "id",
+        nome    AS "nome",
+        email   AS "email",
+        senha   AS "senha",
+        perfil  AS "perfil"
+    FROM usuario
+    WHERE email = :email
+    `,
+    {
+        email
+    }
+    );
+
+    const usuario = resultado.rows?.[0]; // pega o usuario retornado na funcao resultado
+
+      if (!usuario) {
+      res.status(401).json({
+        erro: "Credenciais inválidas"
+      });
+
+      return;
+    }
+
+    if (!conferirSenha(senha, usuario.senha)) {
+      res.status(401).json({
+        erro: "Credenciais inválidas"
+      });
+
+      return;
+    }
+      // resposta
+
+      res.status(200).json({
+        usuario: semSenha(usuario)
+      });
+  } catch (erro) {
+
+    console.error(erro);
+
+    res.status(500).json({
+      erro: "Erro interno do servidor"
     });
-    return;
+
   }
-
-  // verificação das credenciais
-
-  const usuario = usuarios.find(function (usuario) {
-    return usuario.email === email && usuario.senha === senha;
-  });
-
-  if (!usuario) {
-    res.status(401).json({
-      erro: "Credenciais inválidas"
-    });
-    return;
-  }
-
-  // resposta
-
-  res.status(200).json({
-    usuario: semSenha(usuario)
-  });
 });
 
 export default router;

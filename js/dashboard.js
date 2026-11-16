@@ -7,6 +7,16 @@
 
 const API_URL = "http://localhost:3000";
 
+
+//guardando usuario logado
+const usuarioLogado = JSON.parse(
+    localStorage.getItem("usuario")
+);
+
+        if (!usuario) {
+            window.location.href = "login.html";
+        }
+
 // Id do número de cada status no HTML
 const CARTOES_STATUS = {
   "Aberta": "metrica-aberta",
