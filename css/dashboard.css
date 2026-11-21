@@ -95,26 +95,6 @@ ul {
   color: #ffffff;
 }
 
-.usuario-logado {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: var(--cor-primaria);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-
 /* ---------- Área principal ---------- */
 .conteudo {
   max-width: 1180px;
@@ -140,35 +120,7 @@ ul {
   border-radius: var(--raio-borda);
   box-shadow: var(--sombra-card);
   padding: 18px 20px;
-}
-
-.botao {
-  display: inline-block;
-  padding: 9px 16px;
-  border-radius: var(--raio-borda);
-  border: 1px solid transparent;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.botao-primario {
-  background-color: var(--cor-primaria);
-  color: #ffffff;
-}
-
-.botao-primario:hover {
-  background-color: var(--cor-primaria-escura);
-}
-
-.botao-secundario {
-  background-color: var(--cor-superficie);
-  color: var(--cor-texto);
-  border-color: var(--cor-borda);
-}
-
-.botao-secundario:hover {
-  background-color: var(--cor-fundo);
+  overflow-x: auto; /* tabela larga rola dentro do card, não a página */
 }
 
 
@@ -206,28 +158,14 @@ tbody tr:hover {
   background-color: transparent;
 }
 
-.selo {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #ffffff;
-  white-space: nowrap;
+/* título da demanda nas tabelas, leva para demanda.html?id= */
+.link-demanda {
+  color: var(--cor-primaria);
 }
 
-.selo-aberta { background-color: var(--status-aberta); }
-.selo-andamento { background-color: var(--status-andamento); }
-.selo-revisao { background-color: var(--status-revisao); }
-.selo-concluida { background-color: var(--status-concluida); }
-.selo-cancelada { background-color: var(--status-cancelada); }
-
-.selo-critica { background-color: var(--prioridade-critica); }
-.selo-alta { background-color: var(--prioridade-alta); }
-.selo-media { background-color: var(--prioridade-media); }
-.selo-baixa { background-color: var(--prioridade-baixa); }
+.link-demanda:hover {
+  text-decoration: underline;
+}
 
 .grade-resumo {
   display: grid;
@@ -256,7 +194,7 @@ tbody tr:hover {
 
 .grade-duas-colunas {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -319,41 +257,11 @@ tbody tr:hover {
 }
 
 
-.campo {
-  margin-bottom: 16px;
-}
-
-.campo label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.campo input,
-.campo select,
-.campo textarea {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-borda);
-  font-size: 0.9rem;
-  font-family: inherit;
-}
-
-.campo input:focus,
-.campo select:focus,
-.campo textarea:focus {
-  outline: none;
-  border-color: var(--cor-primaria);
-}
-
-
 /* ---------------------------------------------------------------
    Etiquetas coloridas de status e de prioridade
-   Acrescentado por Pedro Tiezo Sales Shimizu na integracao com os
+   Acrescentado por Pedro Tiezo Sales Shimizu na integração com os
    dados, para que as tabelas do dashboard usem a mesma identidade
-   visual da listagem e da tela de demanda.
+   visual da listagem e da tela de demanda (criarEtiqueta, js/formato.js).
    --------------------------------------------------------------- */
 
 .etiqueta {
@@ -375,7 +283,8 @@ tbody tr:hover {
 .etiqueta-alta      { background-color: #fef1e6; color: var(--prioridade-alta); }
 .etiqueta-media     { background-color: #fef3e0; color: var(--prioridade-media); }
 .etiqueta-baixa     { background-color: #e6f6ec; color: var(--prioridade-baixa); }
-/* aviso de demandas com dados inválidos */
+
+/* aviso de erro da API (ou API fora do ar) */
 .aviso-dados {
   background-color: #fef2f2;
   border: 1px solid var(--status-cancelada);

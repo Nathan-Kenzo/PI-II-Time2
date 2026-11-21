@@ -1,5 +1,5 @@
 /**
- * Autor: [Felipe Oliveira Barbosa]
+ * Autor: Felipe Oliveira Barbosa
  *
  * Ponto de entrada do servidor. Configura o Express, registra as rotas
  * e define as respostas padrão de erro (sempre em JSON).

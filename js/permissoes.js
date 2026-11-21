@@ -1,12 +1,12 @@
 /**
  * Autor: Pedro Tiezo Sales Shimizu
- * Descricao: Regras de permissao por perfil de acesso e regras do ciclo de vida
- *            da demanda, conforme os itens 2.1 e 2.2.4 do documento de visao.
+ * Descrição: Regras de permissão por perfil de acesso e regras do ciclo de vida
+ *            da demanda, conforme os itens 2.1 e 2.2.4 do documento de visão.
  *
- * Este arquivo concentra as regras de negocio de acesso para que as telas apenas
- * perguntem "o usuario pode fazer isso?" em vez de repetir a regra em cada lugar.
- * As mesmas regras deverao ser aplicadas novamente no backend, ja que o bloqueio
- * feito somente no navegador nao garante seguranca.
+ * Este arquivo concentra as regras de negócio de acesso para que as telas apenas
+ * perguntem "o usuário pode fazer isso?" em vez de repetir a regra em cada lugar.
+ * As mesmas regras são aplicadas novamente no backend, já que o bloqueio feito
+ * somente no navegador não garante segurança.
  */
 
 /* ==========================================================================
@@ -14,36 +14,36 @@
    ========================================================================== */
 
 /*
- * Transicoes permitidas a partir de cada status.
- * Regras do documento de visao:
+ * Transições permitidas a partir de cada status.
+ * Regras do documento de visão:
  *  - toda demanda nasce Aberta;
- *  - nao e permitido concluir direto de Em andamento, deve passar por Em revisao;
- *  - nao e permitido voltar de Em andamento para Aberta;
- *  - Em revisao pode voltar para Em andamento quando a conferencia reprovar;
- *  - o cancelamento pode ocorrer a qualquer momento, desde que nao esteja Concluida;
- *  - Concluida e Cancelada sao status finais.
+ *  - não é permitido concluir direto de Em andamento, deve passar por Em revisão;
+ *  - não é permitido voltar de Em andamento para Aberta;
+ *  - Em revisão pode voltar para Em andamento quando a conferência reprovar;
+ *  - o cancelamento pode ocorrer a qualquer momento, desde que não esteja Concluída;
+ *  - Concluída e Cancelada são status finais.
  */
 const TRANSICOES = {
   'Aberta':       ['Em andamento', 'Cancelada'],
-  'Em andamento': ['Em revisao', 'Cancelada'],
-  'Em revisao':   ['Em andamento', 'Concluida', 'Cancelada'],
-  'Concluida':    [],
+  'Em andamento': ['Em revisão', 'Cancelada'],
+  'Em revisão':   ['Em andamento', 'Concluída', 'Cancelada'],
+  'Concluída':    [],
   'Cancelada':    []
 };
 
 /*
- * Transicoes que o Membro da Equipe pode realizar, e apenas nas demandas
- * atribuidas a ele. Todas as demais cabem ao Lider de Projeto ou ao Administrador.
+ * Transições que o Membro da Equipe pode realizar, e apenas nas demandas
+ * atribuídas a ele. Todas as demais cabem ao Líder de Projeto ou ao Administrador.
  */
 const TRANSICOES_DO_MEMBRO = {
   'Aberta': ['Em andamento'],
-  'Em andamento': ['Em revisao']
+  'Em andamento': ['Em revisão']
 };
 
-/* Indica se a mudanca de um status para outro respeita o fluxo da demanda. */
+/* Indica se a mudança de um status para outro respeita o fluxo da demanda. */
 function transicaoValida(statusAtual, statusNovo) {
   if (statusAtual === statusNovo) {
-    return true; // manter o status atual e sempre aceito
+    return true; // manter o status atual é sempre aceito
   }
   const permitidos = TRANSICOES[statusAtual] || [];
   return permitidos.indexOf(statusNovo) >= 0;
@@ -51,10 +51,10 @@ function transicaoValida(statusAtual, statusNovo) {
 
 
 /* ==========================================================================
-   Consultas auxiliares de vinculo
+   Consultas auxiliares de vínculo
    ========================================================================== */
 
-/* O usuario esta vinculado ao projeto informado? O Administrador ve todos. */
+/* O usuário está vinculado ao projeto informado? O Administrador vê todos. */
 function vinculadoAoProjeto(usuario, projetoId) {
   if (!usuario) {
     return false;
@@ -65,29 +65,26 @@ function vinculadoAoProjeto(usuario, projetoId) {
   return (usuario.projetos || []).indexOf(Number(projetoId)) >= 0;
 }
 
-/*
- * O usuario esta entre os responsaveis pela demanda?
- * A demanda aceita mais de um responsavel, entao a verificacao e feita na lista.
- */
+/* O usuário é o responsável pela demanda? A demanda tem no máximo um responsável. */
 function ehResponsavel(usuario, demanda) {
   if (!usuario || !demanda) {
     return false;
   }
-  return (demanda.responsaveisIds || []).indexOf(usuario.id) >= 0;
+  return demanda.responsavelId === usuario.id;
 }
 
-/* Demandas concluidas ou canceladas nao aceitam mais alteracoes. */
+/* Demandas concluídas ou canceladas não aceitam mais alterações. */
 function demandaEncerrada(demanda) {
   return !!demanda && (demanda.status === STATUS.CONCLUIDA || demanda.status === STATUS.CANCELADA);
 }
 
 
 /* ==========================================================================
-   Permissoes por acao
-   Cada funcao devolve true quando a acao e permitida ao usuario informado.
+   Permissões por ação
+   Cada função devolve true quando a ação é permitida ao usuário informado.
    ========================================================================== */
 
-/* Visualizar a demanda: o Administrador ve todas; os demais, apenas as dos seus projetos. */
+/* Visualizar a demanda: o Administrador vê todas; os demais, apenas as dos seus projetos. */
 function podeVisualizar(usuario, demanda) {
   if (!usuario || !demanda) {
     return false;
@@ -95,18 +92,7 @@ function podeVisualizar(usuario, demanda) {
   return vinculadoAoProjeto(usuario, demanda.projetoId);
 }
 
-/*
- * Todas as demandas que o usuario pode enxergar.
- * Usada pelo dashboard e pela listagem: o Administrador ve tudo, os demais
- * perfis veem apenas as demandas dos projetos aos quais estao vinculados.
- */
-function demandasVisiveis(usuario) {
-  return lerDemandas().filter(function (demanda) {
-    return podeVisualizar(usuario, demanda);
-  });
-}
-
-/* Criar demanda: permitido ao Administrador e ao Lider de Projeto. */
+/* Criar demanda: permitido ao Administrador e ao Líder de Projeto. */
 function podeCriarDemanda(usuario) {
   if (!usuario) {
     return false;
@@ -115,10 +101,10 @@ function podeCriarDemanda(usuario) {
 }
 
 /*
- * Editar os dados da demanda (titulo, descricao, tipo, prazo).
- * O Administrador edita qualquer demanda; o Lider apenas as dos projetos aos
- * quais esta vinculado; o Membro da Equipe nao edita demandas.
- * Demandas encerradas nao podem mais ser editadas.
+ * Editar os dados da demanda (título, descrição, tipo, prazo).
+ * O Administrador edita qualquer demanda; o Líder apenas as dos projetos aos
+ * quais está vinculado; o Membro da Equipe não edita demandas.
+ * Demandas encerradas não podem mais ser editadas.
  */
 function podeEditarDemanda(usuario, demanda) {
   if (!usuario || !demanda || demandaEncerrada(demanda)) {
@@ -133,30 +119,25 @@ function podeEditarDemanda(usuario, demanda) {
   return false;
 }
 
-/* Atribuir ou alterar o responsavel: Administrador e Lider do projeto. */
+/* Atribuir ou alterar o responsável: Administrador e Líder do projeto. */
 function podeAlterarResponsavel(usuario, demanda) {
   return podeEditarDemanda(usuario, demanda);
 }
 
-/* Alterar a prioridade: Administrador e Lider do projeto. */
+/* Alterar a prioridade: Administrador e Líder do projeto. */
 function podeAlterarPrioridade(usuario, demanda) {
   return podeEditarDemanda(usuario, demanda);
 }
 
-/* Registrar comentarios: permitido a todos os perfis que enxergam a demanda. */
+/* Registrar comentários: permitido a todos os perfis que enxergam a demanda. */
 function podeComentar(usuario, demanda) {
   return podeVisualizar(usuario, demanda);
 }
 
-/* Visualizar o historico de alteracoes: permitido a todos os perfis. */
-function podeVerHistorico(usuario, demanda) {
-  return podeVisualizar(usuario, demanda);
-}
-
 /*
- * Alterar o status para um valor especifico.
- * Verifica, nesta ordem: vinculo com o projeto, validade da transicao no fluxo
- * e, para o Membro da Equipe, se a demanda e dele e se a transicao esta na
+ * Alterar o status para um valor específico.
+ * Verifica, nesta ordem: vínculo com o projeto, validade da transição no fluxo
+ * e, para o Membro da Equipe, se a demanda é dele e se a transição está na
  * lista restrita permitida ao perfil.
  */
 function podeAlterarStatus(usuario, demanda, statusNovo) {
@@ -177,7 +158,7 @@ function podeAlterarStatus(usuario, demanda, statusNovo) {
     return true;
   }
 
-  // Membro da Equipe: apenas nas demandas atribuidas a ele e nas duas transicoes previstas.
+  // Membro da Equipe: apenas nas demandas atribuídas a ele e nas duas transições previstas.
   if (!ehResponsavel(usuario, demanda)) {
     return false;
   }
@@ -185,7 +166,7 @@ function podeAlterarStatus(usuario, demanda, statusNovo) {
   return permitidos.indexOf(statusNovo) >= 0;
 }
 
-/* Lista dos status que o usuario realmente consegue escolher para esta demanda. */
+/* Lista dos status que o usuário realmente consegue escolher para esta demanda. */
 function statusDisponiveis(usuario, demanda) {
   if (!demanda) {
     return [];
@@ -196,41 +177,36 @@ function statusDisponiveis(usuario, demanda) {
   });
 }
 
-/* Concluir a demanda: caso particular de mudanca de status para Concluida. */
-function podeConcluir(usuario, demanda) {
-  return podeAlterarStatus(usuario, demanda, STATUS.CONCLUIDA);
-}
-
 /*
- * Cancelar a demanda. Nao existe exclusao fisica no sistema: cancelar significa
- * gravar o status Cancelada, preservando o historico das atividades.
+ * Cancelar a demanda. Não existe exclusão física no sistema: cancelar significa
+ * gravar o status Cancelada, preservando o histórico das atividades.
  */
 function podeCancelar(usuario, demanda) {
   return podeAlterarStatus(usuario, demanda, STATUS.CANCELADA);
 }
 
 /*
- * Mensagem exibida ao usuario explicando por que a tela esta somente leitura.
- * Retorna string vazia quando o usuario pode editar normalmente.
+ * Mensagem exibida ao usuário explicando por que a tela está somente leitura.
+ * Retorna string vazia quando o usuário pode editar normalmente.
  */
 function motivoSomenteLeitura(usuario, demanda) {
   if (!demanda) {
     return '';
   }
   if (!podeVisualizar(usuario, demanda)) {
-    return 'Voce nao esta vinculado ao projeto desta demanda, portanto nao pode visualiza-la.';
+    return 'Você não está vinculado ao projeto desta demanda, portanto não pode visualizá-la.';
   }
   if (demanda.status === STATUS.CONCLUIDA) {
-    return 'Esta demanda ja foi concluida e nao aceita mais alteracoes. O historico permanece disponivel para consulta.';
+    return 'Esta demanda já foi concluída e não aceita mais alterações. O histórico permanece disponível para consulta.';
   }
   if (demanda.status === STATUS.CANCELADA) {
-    return 'Esta demanda foi cancelada. O registro e o historico sao preservados, mas nao podem mais ser alterados.';
+    return 'Esta demanda foi cancelada. O registro e o histórico são preservados, mas não podem mais ser alterados.';
   }
   if (!podeEditarDemanda(usuario, demanda)) {
     if (statusDisponiveis(usuario, demanda).length > 0) {
-      return 'Seu perfil nao permite editar os dados desta demanda. Voce pode atualizar o status e registrar comentarios.';
+      return 'Seu perfil não permite editar os dados desta demanda. Você pode atualizar o status e registrar comentários.';
     }
-    return 'Seu perfil nao permite editar esta demanda. Voce pode registrar comentarios e consultar o historico.';
+    return 'Seu perfil não permite editar esta demanda. Você pode registrar comentários e consultar o histórico.';
   }
   return '';
 }

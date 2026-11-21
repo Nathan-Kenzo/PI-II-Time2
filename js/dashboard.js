@@ -2,20 +2,11 @@
  * Autor: Felipe Oliveira Barbosa
  *
  * Tela de dashboard: busca os indicadores em GET /dashboard e preenche a tela.
+ * A API devolve só as demandas dos projetos do usuário (o Administrador vê todas).
  * Se a API devolver erro ou estiver fora do ar, a mensagem aparece no aviso vermelho.
+ * usuarioLogado() e chamarApi() estão em js/dados.js; criarEtiqueta() e
+ * formatarData() estão em js/formato.js.
  */
-
-const API_URL = "http://localhost:3000";
-
-
-//guardando usuario logado
-const usuarioLogado = JSON.parse(
-    localStorage.getItem("usuario")
-);
-
-        if (!usuario) {
-            window.location.href = "login.html";
-        }
 
 // Id do número de cada status no HTML
 const CARTOES_STATUS = {
@@ -24,22 +15,6 @@ const CARTOES_STATUS = {
   "Em revisão": "metrica-revisao",
   "Concluída": "metrica-concluida",
   "Cancelada": "metrica-cancelada"
-};
-
-// Classes do CSS (selos coloridos)
-const SELO_STATUS = {
-  "Aberta": "selo-aberta",
-  "Em andamento": "selo-andamento",
-  "Em revisão": "selo-revisao",
-  "Concluída": "selo-concluida",
-  "Cancelada": "selo-cancelada"
-};
-
-const SELO_PRIORIDADE = {
-  "Crítica": "selo-critica",
-  "Alta": "selo-alta",
-  "Média": "selo-media",
-  "Baixa": "selo-baixa"
 };
 
 // Cor das barras de prioridade (as de tipo usam a cor padrão)
@@ -65,21 +40,6 @@ function limparAviso() {
   const aviso = document.getElementById("aviso-dados");
   aviso.textContent = "";
   aviso.hidden = true;
-}
-
-// A API devolve erros no formato { erro: "...", detalhes: ["..."] }
-function montarMensagemErro(dados, codigo) {
-  let mensagem = "Erro ao carregar o dashboard";
-
-  if (dados && dados.erro) {
-    mensagem = dados.erro;
-  }
-
-  if (dados && Array.isArray(dados.detalhes) && dados.detalhes.length > 0) {
-    mensagem += ": " + dados.detalhes.join(" ");
-  }
-
-  return mensagem + " (código " + codigo + ")";
 }
 
 
@@ -134,7 +94,8 @@ function preencherBarras(idContainer, contagem, cores, total) {
   }
 }
 
-// Cada célula é um texto ou um objeto { texto, selo } quando precisa do selo colorido
+// Cada célula é um texto, um objeto { etiqueta } para a etiqueta colorida
+// ou um objeto { texto, link } para o título que leva à demanda
 function preencherTabela(idCorpo, linhas, mensagemVazia) {
   const corpo = document.getElementById(idCorpo);
   corpo.innerHTML = "";
@@ -158,11 +119,14 @@ function preencherTabela(idCorpo, linhas, mensagemVazia) {
 
       if (typeof celula === "string") {
         td.textContent = celula;
+      } else if (celula.link) {
+        const link = document.createElement("a");
+        link.className = "link-demanda";
+        link.href = celula.link;
+        link.textContent = celula.texto;
+        td.appendChild(link);
       } else {
-        const selo = document.createElement("span");
-        selo.className = "selo " + celula.selo;
-        selo.textContent = celula.texto;
-        td.appendChild(selo);
+        td.appendChild(criarEtiqueta(celula.etiqueta));
       }
 
       tr.appendChild(td);
@@ -175,10 +139,10 @@ function preencherTabela(idCorpo, linhas, mensagemVazia) {
 function preencherCriticas(criticas) {
   const linhas = criticas.map(function (demanda) {
     return [
-      demanda.titulo,
+      { texto: demanda.titulo, link: "demanda.html?id=" + demanda.id },
       demanda.projeto,
       demanda.responsavel || "-",
-      { texto: demanda.status, selo: SELO_STATUS[demanda.status] }
+      { etiqueta: demanda.status }
     ];
   });
 
@@ -187,21 +151,20 @@ function preencherCriticas(criticas) {
 
 function preencherProximasDoPrazo(proximas, diasAlerta) {
   const linhas = proximas.map(function (demanda) {
-    // formatarData está em js/formato.js
     let textoPrazo = formatarData(demanda.prazo);
     if (demanda.vencida) {
       textoPrazo += " (vencido)";
     }
 
     return [
-      demanda.titulo,
+      { texto: demanda.titulo, link: "demanda.html?id=" + demanda.id },
       textoPrazo,
-      { texto: demanda.prioridade, selo: SELO_PRIORIDADE[demanda.prioridade] },
-      { texto: demanda.status, selo: SELO_STATUS[demanda.status] }
+      { etiqueta: demanda.prioridade },
+      { etiqueta: demanda.status }
     ];
   });
 
-  preencherTabela("corpo-prazo", linhas, "Nenhuma demanda com prazo nos próximos " + diasAlerta + " dias");
+  preencherTabela("corpo-prazo", linhas, "Nenhuma demanda vencida ou com prazo nos próximos " + diasAlerta + " dias");
 }
 
 function preencherTela(dados) {
@@ -229,41 +192,25 @@ function limparTela() {
 
 // ---------- Chamada à API ----------
 
-async function carregarDashboard() {
+async function carregarDashboard(usuario) {
   limparAviso();
 
-  // falha aqui = API fora do ar
-  let resposta;
-  try {
-    resposta = await fetch(API_URL + "/dashboard");
-  } catch (erro) {
-    console.error("Falha ao chamar a API:", erro);
-    mostrarAviso("Não foi possível conectar à API. Confira se o backend está rodando em " + API_URL + ".");
-    limparTela();
-    return;
-  }
-
-  let dados = null;
-  try {
-    dados = await resposta.json();
-  } catch (erro) {
-    dados = null;
-  }
-
-  // a API respondeu com erro (400, 401, 404, 500...)
+  // API fora do ar ou erro (400, 401, 500...): a mensagem já vem pronta
+  const resposta = await chamarApi("GET", "/dashboard?usuarioId=" + encodeURIComponent(usuario.id));
   if (!resposta.ok) {
-    mostrarAviso(montarMensagemErro(dados, resposta.status));
+    mostrarAviso(resposta.erro);
     limparTela();
     return;
   }
 
-  if (dados === null) {
-    mostrarAviso("A API devolveu uma resposta inesperada.");
-    limparTela();
-    return;
-  }
-
-  preencherTela(dados);
+  preencherTela(resposta.dados);
 }
 
-carregarDashboard();
+// sem usuário logado, usuarioLogado() já manda para a tela de login
+const usuario = usuarioLogado();
+if (usuario) {
+  if (usuario.perfil !== PERFIS.ADMIN) {
+    document.getElementById("subtitulo-dashboard").textContent = "Resumo das demandas dos seus projetos";
+  }
+  carregarDashboard(usuario);
+}

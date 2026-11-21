@@ -1,23 +1,22 @@
 /**
- * Autor das validacoes de demanda: Felipe Oliveira Barbosa
- * Autor das validacoes de filtro: Nathan Kenzo Puzipe
- * Adaptacao para a camada de dados compartilhada: Pedro Tiezo Sales Shimizu
+ * Autor das validações de demanda: Felipe Oliveira Barbosa
+ * Autor das validações de filtro: Nathan Kenzo Puzipe
+ * Adaptação para a camada de dados compartilhada: Pedro Tiezo Sales Shimizu
  *
- * Descricao: Regras de validacao usadas pelo dashboard e pela listagem.
+ * Descrição: Regras de validação da demanda e dos filtros da listagem.
  *
- * As funcoes deste arquivo sao puras: recebem valores e devolvem a lista de
- * erros ou a mensagem de erro, sem mexer na tela. Quem exibe o resultado e a
- * tela que chamou. Isso permite testar as regras isoladamente e reaproveitar
- * as mesmas validacoes quando a API do backend existir.
+ * As funções deste arquivo são puras: recebem valores e devolvem a lista de
+ * erros ou a mensagem de erro, sem mexer na tela. Quem exibe o resultado é a
+ * tela que chamou. Isso permite testar as regras isoladamente (js/validacoes.test.js).
  */
 
 
 /* ==========================================================================
-   Validacao dos dados da demanda
+   Validação dos dados da demanda
    Escrita originalmente em js/dashboard.js por Felipe Oliveira Barbosa.
    ========================================================================== */
 
-/* Confere se o texto e uma data real no formato aaaa-mm-dd. */
+/* Confere se o texto é uma data real no formato aaaa-mm-dd. */
 function dataValida(texto) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
     return false;
@@ -28,48 +27,45 @@ function dataValida(texto) {
   const mes = Number(partes[1]);
   const dia = Number(partes[2]);
 
-  // Se o dia nao existir no mes (ex.: 31/02), o Date "corrige" e os valores mudam.
+  // Se o dia não existir no mês (ex.: 31/02), o Date "corrige" e os valores mudam.
   const data = new Date(ano, mes - 1, dia);
   return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
 }
 
 /*
- * Devolve a lista de erros de uma demanda (lista vazia = demanda valida).
+ * Devolve a lista de erros de uma demanda (lista vazia = demanda válida).
  *
- * O tipo aceita texto livre, porque a equipe permitiu tipos personalizados
- * alem dos quatro obrigatorios (ver TIPO_PERSONALIZADO em js/dados.js).
+ * O tipo é conferido na lista fixa pela API. O projeto também é conferido
+ * pela API, no banco.
  */
 function validarDemanda(demanda) {
   const erros = [];
 
   if (typeof demanda.titulo !== 'string' || demanda.titulo.trim() === '') {
-    erros.push('titulo vazio');
+    erros.push('título vazio');
   }
   if (typeof demanda.tipo !== 'string' || demanda.tipo.trim() === '') {
     erros.push('tipo vazio');
   }
   if (PRIORIDADES.indexOf(demanda.prioridade) < 0) {
-    erros.push('prioridade invalida (' + demanda.prioridade + ')');
+    erros.push('prioridade inválida (' + demanda.prioridade + ')');
   }
   if (Object.values(STATUS).indexOf(demanda.status) < 0) {
-    erros.push('status invalido (' + demanda.status + ')');
-  }
-  if (!buscarProjeto(demanda.projetoId)) {
-    erros.push('projeto inexistente (' + demanda.projetoId + ')');
+    erros.push('status inválido (' + demanda.status + ')');
   }
 
-  // O prazo e opcional, mas se vier preenchido tem que ser uma data real.
+  // O prazo é opcional, mas se vier preenchido tem que ser uma data real.
   if (demanda.prazo && !dataValida(demanda.prazo)) {
-    erros.push('prazo invalido (' + demanda.prazo + ')');
+    erros.push('prazo inválido (' + demanda.prazo + ')');
   }
 
   return erros;
 }
 
 /*
- * Separa as demandas validas das invalidas.
- * As invalidas ficam de fora dos indicadores, mas sao registradas no console
- * para que o problema nao passe despercebido durante o desenvolvimento.
+ * Separa as demandas válidas das inválidas.
+ * As inválidas ficam de fora, mas são registradas no console
+ * para que o problema não passe despercebido durante o desenvolvimento.
  */
 function separarDemandasValidas(demandas) {
   const validas = [];
@@ -90,36 +86,36 @@ function separarDemandasValidas(demandas) {
 
 
 /* ==========================================================================
-   Validacao dos filtros da listagem
+   Validação dos filtros da listagem
    Escrita originalmente em js/listagem.js por Nathan Kenzo Puzipe.
 
-   Nenhum filtro e obrigatorio: uma listagem sem filtro e o estado normal da
-   tela. As regras so valem quando o campo esta preenchido.
+   Nenhum filtro é obrigatório: uma listagem sem filtro é o estado normal da
+   tela. As regras só valem quando o campo está preenchido.
    ========================================================================== */
 
 const REGRA_BUSCA = { min: 2, max: 100 };
 
-/* Busca por titulo ou descricao: sem conter apenas espacos, entre 2 e 100 caracteres. */
+/* Busca por título ou descrição: sem conter apenas espaços, entre 2 e 100 caracteres. */
 function validarBusca(valor) {
   const texto = String(valor).trim();
 
   if (texto === '') {
-    // Digitou algo, mas so espacos em branco.
-    return String(valor).length > 0 ? 'A busca nao pode conter apenas espacos.' : '';
+    // Digitou algo, mas só espaços em branco.
+    return String(valor).length > 0 ? 'A busca não pode conter apenas espaços.' : '';
   }
   if (texto.length < REGRA_BUSCA.min) {
     return 'Digite pelo menos ' + REGRA_BUSCA.min + ' caracteres.';
   }
   if (texto.length > REGRA_BUSCA.max) {
-    return 'Use no maximo ' + REGRA_BUSCA.max + ' caracteres.';
+    return 'Use no máximo ' + REGRA_BUSCA.max + ' caracteres.';
   }
   return '';
 }
 
 /*
- * Select de lista fechada. Vazio significa "Todos", que e valido.
+ * Select de lista fechada. Vazio significa "Todos", que é válido.
  * Qualquer valor fora da lista (por exemplo, HTML alterado no navegador)
- * e recusado.
+ * é recusado.
  */
 function validarOpcao(valor, permitidas, mensagem) {
   if (valor === '') {

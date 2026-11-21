@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/servidor.ts",
     "build": "tsc",
-    "start": "node dist/servidor.js"
+    "start": "node dist/servidor.js",
+    "test": "tsx src/senha.ts && node ../js/validacoes.test.js"
   },
   "license": "ISC",
   "dependencies": {

@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <!--
   Autor da estrutura e do layout: Felipe Oliveira dos Santos
-  Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
-  Integracao com a API (GET /dashboard): Felipe Oliveira Barbosa
-  Descricao: Tela inicial com os indicadores resumidos das demandas.
-             Os numeros vem da API e sao preenchidos em js/dashboard.js.
+  Ajustes para integração com os dados: Pedro Tiezo Sales Shimizu
+  Integração com a API (GET /dashboard): Felipe Oliveira Barbosa
+  Descrição: Tela inicial com os indicadores resumidos das demandas.
+             Os números vêm da API e são preenchidos em js/dashboard.js.
 -->
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - Sistema de Demandas</title>
+  <title>Dashboard - DemandaTrack</title>
   <link rel="stylesheet" href="../css/dashboard.css">
-  <link rel="stylesheet" href="../css/simulacao.css">
+  <link rel="stylesheet" href="../css/sessao.css">
 </head>
 <body>
 
-  <!-- Cabeçalho e menu, iguais em todas as telas do sistema -->
+  <!-- Cabeçalho e menu, iguais nas telas internas (ver js/sessao.js) -->
   <header class="cabecalho">
     <div class="logo">Demanda<span>Track</span></div>
 
     <nav class="menu">
-      <a href="login.html">Login</a>
       <a href="dashboard.html" class="ativo">Dashboard</a>
       <a href="listagem.html">Demandas</a>
-      <a href="demanda.html">Nova Demanda</a>
+      <a href="demanda.html" id="menu-nova-demanda">Nova Demanda</a>
+      <a href="login.html" id="link-sair">Sair</a>
     </nav>
   </header>
 
-  <!-- Barra temporaria de simulacao de perfil (ver js/simulacao.js) -->
-  <div id="barra-simulacao"></div>
+  <!-- Barra com o usuário logado (ver js/sessao.js) -->
+  <div id="barra-usuario"></div>
 
   <main class="conteudo">
     <h1 class="titulo-pagina">Dashboard</h1>
-    <p class="subtitulo-pagina">Resumo geral das demandas cadastradas no sistema</p>
+    <p class="subtitulo-pagina" id="subtitulo-dashboard">Resumo geral das demandas cadastradas no sistema</p>
 
-    <!-- Aparece so quando a API devolve erro ou esta fora do ar (ver js/dashboard.js) -->
+    <!-- Aparece só quando a API devolve erro ou está fora do ar (ver js/dashboard.js) -->
     <p class="aviso-dados" id="aviso-dados" hidden></p>
 
     <!-- Total de demandas + contagem por status -->
@@ -124,7 +124,7 @@
 
   <script src="../js/dados.js"></script>
   <script src="../js/formato.js"></script>
-  <script src="../js/simulacao.js"></script>
+  <script src="../js/sessao.js"></script>
   <script src="../js/dashboard.js"></script>
 
 </body>

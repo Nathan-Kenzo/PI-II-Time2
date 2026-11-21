@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <!--
   Autor: Pedro Tiezo Sales Shimizu
-  Descricao: Tela de criacao e edicao de demandas do DemandaTrack.
+  Descrição: Tela de criação e edição de demandas do DemandaTrack.
 
   A mesma tela atende aos dois casos de uso:
-    - sem parametro na URL  -> cadastro de uma nova demanda;
-    - com ?id=N na URL      -> edicao da demanda de identificador N.
+    - sem parâmetro na URL  -> cadastro de uma nova demanda;
+    - com ?id=N na URL      -> detalhes e edição da demanda de identificador N.
 
-  Os campos sao habilitados ou bloqueados pelo arquivo js/permissoes.js,
-  de acordo com o perfil do usuario e com o status atual da demanda.
+  Os campos são habilitados ou bloqueados pelo arquivo js/permissoes.js,
+  de acordo com o perfil do usuário e com o status atual da demanda.
+  O título da página e o item ativo do menu são definidos por js/demanda.js.
 -->
 <html lang="pt-BR">
 
@@ -17,49 +18,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DemandaTrack - Demanda</title>
   <link rel="stylesheet" href="../css/demanda.css">
-  <link rel="stylesheet" href="../css/simulacao.css">
+  <link rel="stylesheet" href="../css/sessao.css">
 </head>
 
 <body>
 
-  <!-- Cabecalho e menu, iguais em todas as telas do sistema -->
+  <!-- Cabeçalho e menu, iguais nas telas internas (ver js/sessao.js) -->
   <header class="cabecalho">
     <div class="logo">Demanda<span>Track</span></div>
 
     <nav class="menu">
-      <a href="login.html">Login</a>
       <a href="dashboard.html">Dashboard</a>
-      <a href="listagem.html">Demandas</a>
-      <a href="demanda.html" class="ativo">Nova Demanda</a>
+      <a href="listagem.html" id="menu-demandas">Demandas</a>
+      <a href="demanda.html" id="menu-nova-demanda">Nova Demanda</a>
+      <a href="login.html" id="link-sair">Sair</a>
     </nav>
   </header>
 
-  <!--
-    Barra temporaria de simulacao de perfil.
-    Serve para demonstrar as regras de permissao enquanto a tela de login
-    nao esta integrada ao backend. Deve ser removida quando a autenticacao
-    real estiver funcionando.
-  -->
-  <div id="barra-simulacao"></div>
+  <!-- Barra com o usuário logado (ver js/sessao.js) -->
+  <div id="barra-usuario"></div>
 
   <main class="conteudo">
 
-    <h1 class="titulo-pagina" id="titulo-pagina">Nova Demanda</h1>
-    <p class="subtitulo-pagina" id="subtitulo-pagina">
-      Preencha os dados para cadastrar uma nova demanda no sistema
-    </p>
+    <h1 class="titulo-pagina" id="titulo-pagina"></h1>
+    <p class="subtitulo-pagina" id="subtitulo-pagina"></p>
 
-    <!-- Avisos gerais da tela: permissao, erro de gravacao e confirmacao -->
+    <!-- Avisos gerais da tela: permissão, erro de gravação e confirmação -->
     <div class="aviso aviso-info oculto" id="aviso-permissao"></div>
     <div class="aviso aviso-info oculto" id="aviso-info"></div>
     <div class="aviso aviso-erro oculto" id="aviso-erro"></div>
     <div class="aviso aviso-sucesso oculto" id="aviso-sucesso"></div>
 
 
-    <!-- ================= Formulario da demanda ================= -->
+    <!-- ================= Formulário da demanda ================= -->
     <section class="card" id="card-formulario">
 
-      <!-- Identificacao da demanda: aparece somente no modo de edicao -->
+      <!-- Identificação da demanda: aparece somente no modo de edição -->
       <div class="resumo-demanda oculto" id="resumo-demanda">
         <span class="codigo-demanda" id="codigo-demanda"></span>
         <span class="etiqueta" id="etiqueta-status"></span>
@@ -70,23 +64,23 @@
 
         <div class="grade-formulario">
 
-          <!-- Titulo -->
+          <!-- Título -->
           <div class="campo campo-largo" id="campo-titulo">
-            <label for="titulo">Titulo *</label>
-            <input type="text" id="titulo" name="titulo" maxlength="120"
+            <label for="titulo">Título *</label>
+            <input type="text" id="titulo" name="titulo" maxlength="150"
                    placeholder="Resuma a demanda em uma frase">
             <span class="erro-campo" id="erro-titulo"></span>
           </div>
 
-          <!-- Descricao -->
+          <!-- Descrição -->
           <div class="campo campo-largo" id="campo-descricao">
-            <label for="descricao">Descricao *</label>
+            <label for="descricao">Descrição *</label>
             <textarea id="descricao" name="descricao" maxlength="2000"
                       placeholder="Detalhe o que precisa ser feito, como reproduzir o defeito ou o que deve ser documentado"></textarea>
             <span class="erro-campo" id="erro-descricao"></span>
           </div>
 
-          <!-- Tipo da demanda: somente os quatro tipos do documento de visao -->
+          <!-- Tipo da demanda: somente os quatro tipos do documento de visão -->
           <div class="campo" id="campo-tipo">
             <label for="tipo">Tipo *</label>
             <select id="tipo" name="tipo"></select>
@@ -100,7 +94,7 @@
             <span class="erro-campo" id="erro-prioridade"></span>
           </div>
 
-          <!-- Projeto associado: obrigatorio, toda demanda pertence a um projeto -->
+          <!-- Projeto associado: obrigatório, toda demanda pertence a um projeto -->
           <div class="campo" id="campo-projeto">
             <label for="projeto">Projeto associado *</label>
             <select id="projeto" name="projeto"></select>
@@ -109,15 +103,15 @@
 
           <!-- Prazo: validado contra a API externa de feriados nacionais -->
           <div class="campo" id="campo-prazo">
-            <label for="prazo">Prazo de finalizacao</label>
+            <label for="prazo">Prazo de finalização</label>
             <input type="date" id="prazo" name="prazo">
-            <span class="ajuda">A data e conferida na API de feriados nacionais.</span>
+            <span class="ajuda">A data é conferida na API de feriados nacionais.</span>
             <span class="erro-campo" id="erro-prazo"></span>
           </div>
 
           <!--
-            Status: nao aparece na criacao, pois toda demanda nasce Aberta.
-            Na edicao, a lista mostra apenas as transicoes permitidas ao perfil.
+            Status: não aparece na criação, pois toda demanda nasce Aberta.
+            Na edição, a lista mostra apenas as transições permitidas ao perfil.
           -->
           <div class="campo oculto" id="campo-status">
             <label for="status">Status</label>
@@ -127,31 +121,28 @@
           </div>
 
           <!--
-            Responsaveis: a demanda pode ficar sem responsavel na criacao e pode
-            ter mais de um responsavel, por isso a selecao e feita com caixas de
-            marcacao em vez de uma lista de escolha unica.
+            Responsável: no máximo um. A lista mostra só os usuários vinculados
+            ao projeto escolhido (GET /usuarios?projetoId=).
           -->
-          <div class="campo campo-largo" id="campo-responsaveis">
-            <label>Responsaveis</label>
-            <div class="lista-responsaveis" id="lista-responsaveis"></div>
-            <span class="ajuda">
-              Pode ficar sem ninguem marcado e ser atribuido depois. No cadastro, marque no maximo um.
-            </span>
-            <span class="erro-campo" id="erro-responsaveis"></span>
+          <div class="campo" id="campo-responsavel">
+            <label for="responsavel">Responsável</label>
+            <select id="responsavel" name="responsavel"></select>
+            <span class="ajuda">Pode ficar sem responsável e ser atribuída depois.</span>
+            <span class="erro-campo" id="erro-responsavel"></span>
           </div>
 
         </div>
 
-        <!-- Datas controladas pelo sistema, exibidas somente na edicao -->
+        <!-- Datas controladas pelo sistema, exibidas somente na edição -->
         <div class="datas-demanda oculto" id="datas-demanda">
           <span>Criada em: <strong id="data-criacao"></strong></span>
-          <span>Ultima atualizacao: <strong id="data-atualizacao"></strong></span>
+          <span>Última atualização: <strong id="data-atualizacao"></strong></span>
         </div>
 
         <div class="acoes">
           <button type="submit" class="botao botao-primario" id="botao-salvar">Salvar demanda</button>
           <a href="listagem.html" class="botao botao-secundario">Voltar</a>
-          <!-- Cancelar nao apaga o registro: apenas grava o status Cancelada -->
+          <!-- Cancelar não apaga o registro: apenas grava o status Cancelada -->
           <button type="button" class="botao botao-perigo oculto" id="botao-cancelar-demanda">
             Cancelar demanda
           </button>
@@ -162,35 +153,35 @@
     </section>
 
 
-    <!-- ================= Comentarios ================= -->
+    <!-- ================= Comentários ================= -->
     <section class="card oculto" id="card-comentarios">
-      <h2>Comentarios</h2>
+      <h2>Comentários</h2>
       <p class="descricao-secao">
-        Duvidas, observacoes e atualizacoes sobre o andamento da demanda.
+        Dúvidas, observações e atualizações sobre o andamento da demanda.
       </p>
 
       <div class="lista-comentarios" id="lista-comentarios"></div>
 
       <div class="campo" id="campo-comentario">
-        <label for="novo-comentario">Novo comentario</label>
-        <textarea id="novo-comentario" maxlength="1000"
-                  placeholder="Escreva seu comentario"></textarea>
+        <label for="novo-comentario">Novo comentário</label>
+        <textarea id="novo-comentario" maxlength="2000"
+                  placeholder="Escreva seu comentário"></textarea>
         <span class="erro-campo" id="erro-comentario"></span>
       </div>
 
       <div class="acoes">
         <button type="button" class="botao botao-primario" id="botao-comentar">
-          Registrar comentario
+          Registrar comentário
         </button>
       </div>
     </section>
 
 
-    <!-- ================= Historico de alteracoes ================= -->
+    <!-- ================= Histórico de alterações ================= -->
     <section class="card oculto" id="card-historico">
-      <h2>Historico de alteracoes</h2>
+      <h2>Histórico de alterações</h2>
       <p class="descricao-secao">
-        Registro automatico das mudancas relevantes. O historico nunca e apagado,
+        Registro automático das mudanças relevantes. O histórico nunca é apagado,
         mesmo que a demanda seja cancelada.
       </p>
 
@@ -199,11 +190,11 @@
 
   </main>
 
-  <!-- Camada de dados, regras de permissao e controle da tela, nesta ordem -->
+  <!-- Constantes e API, regras de permissão, formatação, sessão e controle da tela, nesta ordem -->
   <script src="../js/dados.js"></script>
   <script src="../js/permissoes.js"></script>
   <script src="../js/formato.js"></script>
-  <script src="../js/simulacao.js"></script>
+  <script src="../js/sessao.js"></script>
   <script src="../js/demanda.js"></script>
 
 </body>

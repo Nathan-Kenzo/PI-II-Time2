@@ -1,6 +1,6 @@
 /**
  * Autor: Henrique Aguiar de Souza Pella
- * Descricao: Estilos da tela de cadastro de usuario (pages/cadastro.html).
+ * Descrição: Estilos da tela de cadastro de usuário (pages/cadastro.html).
  */
 
 body {
@@ -40,8 +40,7 @@ h1 {
     width: 360px;
     border-radius: 6px;
     border: 1px solid #e1e3e6;
-    margin: 70px;
-    margin-top: 5%;
+    margin: 5% auto 70px;
     padding: 30px;
     box-sizing: border-box;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -52,7 +51,7 @@ h1 {
     margin-bottom: 10px;
 }
 
-#nome, #user, #email, #senha, #confirmar {
+#nome, #email, #senha, #confirmar {
     border: 1px solid #d5d8dc;
     border-radius: 5px;
     font-size: 14px;
@@ -91,4 +90,18 @@ h1 {
 #formulario .link-ajuda a:hover {
     color: #3478db;
     text-decoration: underline;
+}
+
+/* mensagens de erro de cada campo e a mensagem geral (erro da API) */
+.erro {
+    color: #dc2626;
+    font-size: 13px;
+}
+
+#formulario .erro-campo {
+    border-color: #dc2626;
+}
+
+#erroGeral {
+    margin-bottom: 10px;
 }
