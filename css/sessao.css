@@ -1,0 +1,30 @@
+/**
+ * Autor: Pedro Tiezo Sales Shimizu
+ * Descrição: Estilo da barra com o usuário logado (js/sessao.js), usada nas
+ *            telas de dashboard, listagem e demanda.
+ */
+
+.barra-usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #fff8e1;
+  border-bottom: 1px solid #f0e2b6;
+  padding: 10px 40px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #8a6d1f;
+}
+
+/* esconde o item do menu marcado com hidden (ex.: "Nova Demanda" para o Membro) */
+.menu a[hidden] {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .barra-usuario {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+  }
+}

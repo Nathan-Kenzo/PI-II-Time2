@@ -17,7 +17,7 @@
  * no texto do SQL. É isso que impede a injeção de SQL.
  *
  * O apelido entre aspas (AS "id") faz o Oracle devolver o nome da coluna em
- * minúsculas, igual aos campos de tipos.ts; sem ele viria "ID".
+ * minúsculas, igual aos campos que a API devolve; sem ele viria "ID".
  */
 
 import oracledb from "oracledb";
@@ -30,7 +30,7 @@ process.loadEnvFile();
 oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
 
 // Cada comando é confirmado (COMMIT) assim que executa
-// ponytail: sem transação entre comandos. Se uma rota precisar gravar duas
+// Limitação: sem transação entre comandos. Se uma rota precisar gravar duas
 // tabelas de forma atômica, pegar uma conexão do pool e confirmar no final.
 oracledb.autoCommit = true;
 

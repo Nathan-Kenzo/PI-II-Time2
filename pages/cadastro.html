@@ -1,58 +1,57 @@
 <!DOCTYPE html>
 <!--
   Autor: Henrique Aguiar de Souza Pella
-  Descricao: Tela de cadastro de usuario. As validacoes ficam em js/cadastro.js.
+  Descrição: Tela de cadastro de usuário. As validações e a chamada a POST /usuarios
+             ficam em js/cadastro.js.
 -->
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tela de Cadastro</title>
+    <title>Cadastro - DemandaTrack</title>
     <link rel="stylesheet" href="../css/cadastro.css">
     <script src="../js/cadastro.js" defer></script>
 </head>
 
+<body>
+
 <header id="cabecalho">
-    <center>
-        <h1 id="demanda">Demanda</h1>
-        <h1 id="track">Track</h1>
-    </center>
+    <h1 id="demanda">Demanda</h1>
+    <h1 id="track">Track</h1>
 </header>
 
-<body>
-    <center>
-    <div id="formulario">
-        <h2>Cadastro</h2>
+<div id="formulario">
+    <h2>Cadastro</h2>
 
-        <form id="formCadastro">
+    <!-- maxlength igual aos limites da API (backend/src/rotas/cadastroUsuarios.ts) -->
+    <form id="formCadastro" novalidate>
 
-            <input type="text" id="nome" placeholder="Nome Completo" required>
-            <div id="erroNome" class="erro"></div>
-            <br><br>
+        <input type="text" id="nome" placeholder="Nome Completo" autocomplete="name" maxlength="100" required>
+        <div id="erroNome" class="erro"></div>
+        <br><br>
 
-            <input type="text" id="user" placeholder="Nome de Usuário" required>
-            <div id="erroUser" class="erro"></div>
-            <br><br>
+        <input type="email" id="email" placeholder="E-mail" autocomplete="email" maxlength="150" required>
+        <div id="erroEmail" class="erro"></div>
+        <br><br>
 
-            <input type="email" id="email" placeholder="E-mail" required>
-            <div id="erroEmail" class="erro"></div>
-            <br><br>
+        <input type="password" id="senha" placeholder="Senha" autocomplete="new-password" maxlength="200" required>
+        <div id="erroSenha" class="erro"></div>
+        <br><br>
 
-            <input type="password" id="senha" placeholder="Senha" required>
-            <div id="erroSenha" class="erro"></div>
-            <br><br>
+        <input type="password" id="confirmar" placeholder="Confirmar Senha" autocomplete="new-password" maxlength="200" required>
+        <div id="erroConfirmar" class="erro"></div>
+        <br>
 
-            <input type="password" id="confirmar" placeholder="Confirmar Senha" required>
-            <div id="erroConfirmar" class="erro"></div>
-            <br>
+        <p class="link-ajuda"><a href="login.html">Já tem uma conta? Faça login</a></p>
+        <br>
 
-            <p class="link-ajuda"><a href="login.html">Já tem uma conta? Faça login</a></p>
-            <br>
+        <!-- Erro devolvido pela API ou falta de resposta do servidor -->
+        <div id="erroGeral" class="erro" role="alert"></div>
 
-            <button type="submit" id="botao">Cadastrar</button>
+        <button type="submit" id="botao">Cadastrar</button>
 
-        </form>
-    </div>
-    </center>
+    </form>
+</div>
+
 </body>
 </html>

@@ -1,11 +1,19 @@
 /**
  * Autor: Pedro Tiezo Sales Shimizu
- * Descricao: Funcoes de formatacao e exibicao usadas por mais de uma tela
- *            (dashboard, listagem e demanda). Evita repetir o mesmo codigo
+ * Descrição: Funções de formatação e exibição usadas por mais de uma tela
+ *            (dashboard, listagem e demanda). Evita repetir o mesmo código
  *            em cada arquivo.
  */
 
-/* Traduz um status ou uma prioridade para a classe de cor correspondente no CSS. */
+/* Tira os acentos de um texto ("Em revisão" vira "Em revisao"). Usada só para comparar. */
+function semAcento(texto) {
+  return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+/*
+ * Traduz um status ou uma prioridade para a classe de cor correspondente no CSS.
+ * A comparação ignora acentos, então "Em revisão" e "Em revisao" dão a mesma cor.
+ */
 function classeDaEtiqueta(valor) {
   const mapa = {
     'Aberta': 'etiqueta-aberta',
@@ -18,7 +26,7 @@ function classeDaEtiqueta(valor) {
     'Media': 'etiqueta-media',
     'Baixa': 'etiqueta-baixa'
   };
-  return mapa[valor] || '';
+  return mapa[semAcento(valor)] || '';
 }
 
 /* Cria o elemento visual da etiqueta colorida de status ou de prioridade. */
@@ -60,17 +68,4 @@ function formatarDataHora(valor) {
   const hora = String(data.getHours()).padStart(2, '0');
   const minuto = String(data.getMinutes()).padStart(2, '0');
   return dia + '/' + mes + '/' + data.getFullYear() + ' ' + hora + ':' + minuto;
-}
-
-/*
- * Quantos dias faltam para uma data (numero negativo quando o prazo ja venceu).
- * Usado no dashboard para destacar as demandas proximas do prazo.
- */
-function diasAte(data) {
-  if (!data) {
-    return null;
-  }
-  const alvo = new Date(data + 'T00:00:00');
-  const hoje = new Date(dataDeHoje() + 'T00:00:00');
-  return Math.round((alvo - hoje) / (1000 * 60 * 60 * 24));
 }

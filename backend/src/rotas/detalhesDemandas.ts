@@ -1,18 +1,28 @@
 /**
  * Autor: Henrique Aguiar de Souza Pella
+ *
+ * Descrição: detalhes, comentários e histórico de uma demanda.
+ *   GET  /demandas/:id?usuarioId=N
+ *   GET  /demandas/:id/comentarios?usuarioId=N
+ *   POST /demandas/:id/comentarios   { usuarioId, texto }
+ *   GET  /demandas/:id/historico?usuarioId=N
+ * Nos GETs: 401 sem usuário válido e 403 se ele não tem acesso ao projeto da demanda.
  */
 
 import { Router, Request, Response } from "express";
 import { executar, SAIDA_NUMERO } from "../bd";
 import {
+  DemandaGravada,
   UsuarioNoProjeto,
   ErroDeRequisicao,
   comTratamentoDeErros,
   lerTexto,
   exigirObjetoJson,
   temAcessoAoProjeto,
+  buscarUsuario,
   buscarAutor,
-  buscarDemandaDaUrl
+  buscarDemandaDaUrl,
+  exigirUsuario
 } from "./apoioDemandas";
 
 const router = Router();
@@ -111,12 +121,24 @@ async function registrarComentario(idDaUrl: unknown, corpo: unknown): Promise<Co
 }
 
 
+// Só mostra a demanda para quem tem acesso ao projeto dela (o Administrador vê todas)
+async function buscarDemandaVisivel(idDaUrl: unknown, usuarioId: unknown): Promise<DemandaGravada> {
+  const usuario = await exigirUsuario(usuarioId);
+  const demanda = await buscarDemandaDaUrl(idDaUrl);
+  const noProjeto = await buscarUsuario(usuario.id, demanda.projetoId);
+  if (!noProjeto || !temAcessoAoProjeto(noProjeto)) {
+    throw new ErroDeRequisicao(403, "O usuário não está vinculado ao projeto desta demanda.");
+  }
+  return demanda;
+}
+
+
 router.get("/demandas/:id", comTratamentoDeErros(async function (req: Request, res: Response) {
-  res.status(200).json({ demanda: await buscarDemandaDaUrl(req.params.id) });
+  res.status(200).json({ demanda: await buscarDemandaVisivel(req.params.id, req.query.usuarioId) });
 }));
 
 router.get("/demandas/:id/comentarios", comTratamentoDeErros(async function (req: Request, res: Response) {
-  const demanda = await buscarDemandaDaUrl(req.params.id);
+  const demanda = await buscarDemandaVisivel(req.params.id, req.query.usuarioId);
   const comentarios = await listarComentarios(demanda.id);
   res.status(200).json({ total: comentarios.length, comentarios });
 }));
@@ -126,7 +148,7 @@ router.post("/demandas/:id/comentarios", comTratamentoDeErros(async function (re
 }));
 
 router.get("/demandas/:id/historico", comTratamentoDeErros(async function (req: Request, res: Response) {
-  const demanda = await buscarDemandaDaUrl(req.params.id);
+  const demanda = await buscarDemandaVisivel(req.params.id, req.query.usuarioId);
   const historico = await listarHistorico(demanda.id);
   res.status(200).json({ total: historico.length, historico });
 }));

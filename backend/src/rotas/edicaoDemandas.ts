@@ -1,5 +1,10 @@
 /**
  * Autor: Henrique Aguiar de Souza Pella
+ *
+ * Descrição: edição de demanda.
+ *   PATCH /demandas/:id   { usuarioId, titulo?, descricao?, tipo?, prioridade?, responsavelId?, prazo?, status? }
+ * Confere a permissão do perfil antes das regras de negócio (transição de status,
+ * responsável e feriado) e grava no histórico cada campo alterado.
  */
 
 import { Router, Request, Response } from "express";
@@ -17,21 +22,19 @@ import {
   buscarUsuario,
   buscarAutor,
   buscarDemandaExistente,
-  buscarDemandaDaUrl
+  buscarDemandaDaUrl,
+  MEMBRO_DA_EQUIPE,
+  TITULO_MIN,
+  TITULO_MAX,
+  DESCRICAO_MIN,
+  DESCRICAO_MAX,
+  acharValor,
+  dataValida,
+  dataDeHoje,
+  conferirFeriado
 } from "./apoioDemandas";
 
 const router = Router();
-
-const TITULO_MIN = 5;
-const TITULO_MAX = 150;
-const DESCRICAO_MIN = 10;
-const DESCRICAO_MAX = 2000;
-
-const API_FERIADOS = "https://brasilapi.com.br/api/feriados/v1/";
-const TEMPO_LIMITE_API_FERIADOS_MS = 5000;
-const AVISO_API_FERIADOS_INDISPONIVEL = "A API de feriados estava indisponível; o prazo foi gravado sem essa conferência.";
-
-const MEMBRO_DA_EQUIPE = "Membro da Equipe";
 
 const TRANSICOES_DE_STATUS: Record<string, string[]> = {
   "Aberta": ["Em andamento", "Cancelada"],
@@ -69,39 +72,12 @@ const NOMES_DOS_CAMPOS: Record<CampoEditavel, string> = {
   status: "o status"
 };
 
-interface Feriado {
-  date: string;
-  name: string;
-}
-
 type Alteracoes = Partial<Pick<DemandaGravada, CampoEditavel>>;
 type Validacao<T> = { valor: T } | { erro: string };
 
-const feriadosPorAno: Record<string, Feriado[]> = {};
-
-
-function normalizar(texto: string): string {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-}
 
 function estaVazio(valor: unknown): boolean {
   return valor === null || valor === "";
-}
-
-function dataValida(texto: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
-    return false;
-  }
-  const [ano, mes, dia] = texto.split("-").map(Number);
-  const data = new Date(ano, mes - 1, dia);
-  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
-}
-
-function dataDeHoje(): string {
-  const hoje = new Date();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-  return `${hoje.getFullYear()}-${mes}-${dia}`;
 }
 
 function ehStatusFinal(status: string): boolean {
@@ -122,9 +98,7 @@ function validarTexto(valor: unknown, campo: string, minimo: number, maximo: num
 
 function validarOpcao(valor: unknown, campo: string, opcoes: string[]): Validacao<string> {
   const texto = lerTexto(valor);
-  const opcaoOficial = opcoes.find(function (opcao) {
-    return texto !== undefined && normalizar(opcao) === normalizar(texto);
-  });
+  const opcaoOficial = texto !== undefined ? acharValor(texto, opcoes) : undefined;
   return opcaoOficial ? { valor: opcaoOficial } : { erro: `Valor inválido para ${campo}. Valores aceitos: ${opcoes.join(", ")}.` };
 }
 
@@ -177,28 +151,6 @@ function lerAlteracoes(corpo: Record<string, unknown>, demanda: DemandaGravada):
   return { alteracoes, erros };
 }
 
-
-async function buscarFeriadosDoAno(ano: string): Promise<Feriado[]> {
-  if (!feriadosPorAno[ano]) {
-    const resposta = await fetch(API_FERIADOS + ano, { signal: AbortSignal.timeout(TEMPO_LIMITE_API_FERIADOS_MS) });
-    if (!resposta.ok) {
-      throw new Error(`BrasilAPI respondeu com status ${resposta.status}`);
-    }
-    feriadosPorAno[ano] = await resposta.json();
-  }
-  return feriadosPorAno[ano];
-}
-
-async function conferirFeriado(prazo: string): Promise<{ erro?: string; aviso?: string }> {
-  try {
-    const feriados = await buscarFeriadosDoAno(prazo.substring(0, 4));
-    const feriado = feriados.find(function (candidato) { return candidato.date === prazo; });
-    return feriado ? { erro: `prazo cai em um feriado nacional (${feriado.name}). Escolha outra data.` } : {};
-  } catch (erro) {
-    console.warn("Falha ao consultar a API de feriados:", erro);
-    return { aviso: AVISO_API_FERIADOS_INDISPONIVEL };
-  }
-}
 
 function validarTransicaoDeStatus(statusAtual: string, statusNovo: string): string | undefined {
   if (TRANSICOES_DE_STATUS[statusAtual].includes(statusNovo)) {
@@ -329,12 +281,15 @@ async function editarDemanda(idDaUrl: unknown, corpo: unknown): Promise<{ demand
   const dados = exigirCorpoComAlteracao(corpo);
   const { alteracoes, erros } = lerAlteracoes(dados, demanda);
   const autor = await buscarAutor(dados.usuarioId, demanda.projetoId);
-  const regras = await validarRegrasDeNegocio(alteracoes, demanda);
-  const detalhes = [...(autor ? [] : ["usuarioId deve ser o id de um usuário existente."]), ...erros, ...regras.erros];
-  if (!autor || detalhes.length > 0) {
-    throw new ErroDeRequisicao(400, "Dados inválidos", detalhes);
+  if (!autor || erros.length > 0) {
+    throw new ErroDeRequisicao(400, "Dados inválidos", [...(autor ? [] : ["usuarioId deve ser o id de um usuário existente."]), ...erros]);
   }
+  // A permissão vem antes das regras de negócio, que consultam o banco e a API de feriados
   exigirPermissao(autor, demanda, alteracoes);
+  const regras = await validarRegrasDeNegocio(alteracoes, demanda);
+  if (regras.erros.length > 0) {
+    throw new ErroDeRequisicao(400, "Dados inválidos", regras.erros);
+  }
   if (Object.keys(alteracoes).length === 0) {
     return { demanda };
   }

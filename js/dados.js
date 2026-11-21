@@ -1,285 +1,118 @@
 /**
  * Autor: Pedro Tiezo Sales Shimizu
- * Descricao: Camada temporaria de dados do DemandaTrack.
+ * Descrição: Constantes do DemandaTrack, usuário logado e chamada à API.
  *
- * IMPORTANTE: esta camada guarda projetos, usuarios e demandas no localStorage
- * do navegador e esta sendo substituida, tela por tela, por chamadas fetch() a
- * API (Node.js + TypeScript + Express), que le e grava no banco Oracle.
- * O cadastro de demanda (js/demanda.js) ja usa a API; as telas que ainda nao
- * foram integradas continuam lendo daqui.
+ * Os dados (projetos, usuários e demandas) ficam no banco Oracle e chegam pela
+ * API (Node.js + TypeScript + Express). Este arquivo guarda só as listas fixas
+ * do documento de visão, o usuário que a tela de login gravou no localStorage
+ * e a função chamarApi, usada pelas telas internas.
  */
 
 /* ==========================================================================
-   Listas fixas exigidas pelo documento de visao
+   Listas fixas exigidas pelo documento de visão.
+   Os textos são os mesmos gravados no banco, com acento.
    ========================================================================== */
 
-/* Tipos obrigatorios da demanda (item 2.2.1 do documento de visao) */
-const TIPOS = ['Tarefa', 'Defeito', 'Melhoria', 'Documentacao'];
+/* Tipos obrigatórios da demanda (item 2.2.1 do documento de visão) */
+const TIPOS = ['Tarefa', 'Defeito', 'Melhoria', 'Documentação'];
 
-/* Prioridades obrigatorias (item 2.2.2) */
-const PRIORIDADES = ['Critica', 'Alta', 'Media', 'Baixa'];
+/* Prioridades obrigatórias (item 2.2.2) */
+const PRIORIDADES = ['Crítica', 'Alta', 'Média', 'Baixa'];
 
-/* Status obrigatorios (item 2.2.3) */
+/* Status obrigatórios (item 2.2.3) */
 const STATUS = {
   ABERTA: 'Aberta',
   ANDAMENTO: 'Em andamento',
-  REVISAO: 'Em revisao',
-  CONCLUIDA: 'Concluida',
+  REVISAO: 'Em revisão',
+  CONCLUIDA: 'Concluída',
   CANCELADA: 'Cancelada'
 };
 
-/* Perfis de acesso obrigatorios (item 2.1) */
+/* Perfis de acesso obrigatórios (item 2.1) */
 const PERFIS = {
   ADMIN: 'Administrador',
-  LIDER: 'Lider de Projeto',
+  LIDER: 'Líder de Projeto',
   MEMBRO: 'Membro da Equipe'
 };
 
 
 /* ==========================================================================
-   Dados iniciais
-   O documento de visao permite que projetos e usuarios sejam previamente
-   cadastrados no banco, sem telas proprias de manutencao (item 2.1).
+   Usuário logado
    ========================================================================== */
 
-const PROJETOS_INICIAIS = [
-  { id: 1, nome: 'DemandaTrack' },
-  { id: 2, nome: 'Portal Academico' },
-  { id: 3, nome: 'App de Biblioteca' }
-];
-
 /*
- * Cada usuario possui um perfil e a lista de projetos aos quais esta vinculado.
- * O Administrador enxerga todos os projetos, por isso sua lista fica vazia.
+ * Usuário autenticado: o que a tela de login gravou no localStorage, no formato
+ * { id, nome, email, perfil, projetos }. Os projetos são os ids vinculados ao
+ * usuário no banco (o Administrador recebe a lista vazia, porque vê todos).
+ * Sem login, volta para a tela de login e devolve null.
  */
-const USUARIOS_INICIAIS = [
-  { id: 1, nome: 'Nathan Kenzo Puzipe',         perfil: PERFIS.ADMIN,  projetos: [] },
-  { id: 2, nome: 'Pedro Tiezo Sales Shimizu',   perfil: PERFIS.LIDER,  projetos: [1] },
-  { id: 3, nome: 'Henrique Aguiar de S. Pella', perfil: PERFIS.LIDER,  projetos: [2, 3] },
-  { id: 4, nome: 'Felipe Oliveira Barbosa',     perfil: PERFIS.MEMBRO, projetos: [1] },
-  { id: 5, nome: 'Felipe Oliveira dos Santos',  perfil: PERFIS.MEMBRO, projetos: [1, 2] }
-];
-
-const DEMANDAS_INICIAIS = [
-  {
-    id: 1,
-    titulo: 'Corrigir erro no login',
-    descricao: 'O formulario de login aceita a submissao com os campos em branco.',
-    tipo: 'Defeito',
-    prioridade: 'Critica',
-    status: STATUS.ABERTA,
-    projetoId: 1,
-    responsaveisIds: [4],
-    dataCriacao: '2026-08-20T09:00:00',
-    dataAtualizacao: '2026-08-20T09:00:00',
-    prazo: '2026-09-30',
-    comentarios: [
-      {
-        id: 1,
-        usuarioId: 2,
-        texto: 'Reproduzido no Chrome e no Firefox. Falta a validacao no submit.',
-        dataHora: '2026-08-21T14:32:00'
-      }
-    ],
-    historico: [
-      { id: 1, usuarioId: 2, descricao: 'criou a demanda.', dataHora: '2026-08-20T09:00:00' }
-    ]
-  },
-  {
-    id: 2,
-    titulo: 'Criar tela de dashboard',
-    descricao: 'Montar a tela inicial com os indicadores resumidos das demandas.',
-    tipo: 'Tarefa',
-    prioridade: 'Alta',
-    status: STATUS.ANDAMENTO,
-    projetoId: 1,
-    responsaveisIds: [5, 4],
-    dataCriacao: '2026-08-21T10:15:00',
-    dataAtualizacao: '2026-08-25T16:40:00',
-    prazo: '2026-09-18',
-    comentarios: [],
-    historico: [
-      { id: 1, usuarioId: 2, descricao: 'criou a demanda.', dataHora: '2026-08-21T10:15:00' },
-      { id: 2, usuarioId: 5, descricao: 'alterou o status da demanda de Aberta para Em andamento.', dataHora: '2026-08-25T16:40:00' }
-    ]
-  },
-  {
-    id: 3,
-    titulo: 'Documentar rotas da API',
-    descricao: 'Descrever no README todas as rotas REST previstas para as demandas.',
-    tipo: 'Documentacao',
-    prioridade: 'Media',
-    status: STATUS.REVISAO,
-    projetoId: 1,
-    responsaveisIds: [],
-    dataCriacao: '2026-08-22T08:05:00',
-    dataAtualizacao: '2026-08-27T11:20:00',
-    prazo: '2026-09-25',
-    comentarios: [],
-    historico: [
-      { id: 1, usuarioId: 1, descricao: 'criou a demanda.', dataHora: '2026-08-22T08:05:00' }
-    ]
-  }
-];
-
-
-/* ==========================================================================
-   Persistencia local (substituir por chamadas a API futuramente)
-   ========================================================================== */
-
-const CHAVE_DEMANDAS = 'demandatrack.demandas';
-const CHAVE_USUARIO_LOGADO = 'demandatrack.usuarioLogado';
-
-/* Le a lista de demandas do localStorage; na primeira execucao usa a carga inicial. */
-function lerDemandas() {
-  try {
-    const bruto = localStorage.getItem(CHAVE_DEMANDAS);
-    if (bruto) {
-      return JSON.parse(bruto).map(migrarDemanda);
-    }
-  } catch (erro) {
-    // Se o conteudo estiver corrompido, recomeca da carga inicial em vez de quebrar a tela.
-    console.warn('Nao foi possivel ler as demandas salvas:', erro);
-  }
-
-  gravarDemandas(DEMANDAS_INICIAIS);
-  return JSON.parse(JSON.stringify(DEMANDAS_INICIAIS));
-}
-
-/*
- * Ajusta demandas gravadas em um formato antigo.
- * A demanda passou a aceitar mais de um responsavel: o campo responsavelId
- * (um unico id) foi substituido por responsaveisIds (uma lista de ids).
- */
-function migrarDemanda(demanda) {
-  if (!Array.isArray(demanda.responsaveisIds)) {
-    demanda.responsaveisIds = demanda.responsavelId ? [demanda.responsavelId] : [];
-  }
-  delete demanda.responsavelId;
-  return demanda;
-}
-
-/* Grava a lista completa de demandas. */
-function gravarDemandas(demandas) {
-  try {
-    localStorage.setItem(CHAVE_DEMANDAS, JSON.stringify(demandas));
-  } catch (erro) {
-    console.warn('Nao foi possivel salvar as demandas:', erro);
-  }
-}
-
-/* Busca uma unica demanda pelo seu identificador. Retorna null se nao existir. */
-function buscarDemanda(id) {
-  const demandas = lerDemandas();
-  return demandas.find(function (demanda) { return demanda.id === Number(id); }) || null;
-}
-
-/* Insere ou atualiza uma demanda na lista, conforme ela ja possua id ou nao. */
-function salvarDemanda(demanda) {
-  const demandas = lerDemandas();
-  const posicao = demandas.findIndex(function (item) { return item.id === demanda.id; });
-
-  if (posicao >= 0) {
-    demandas[posicao] = demanda;
-  } else {
-    demandas.push(demanda);
-  }
-
-  gravarDemandas(demandas);
-  return demanda;
-}
-
-/* Gera o proximo id disponivel para uma nova demanda. */
-function proximoIdDemanda() {
-  const demandas = lerDemandas();
-  if (demandas.length === 0) {
-    return 1;
-  }
-  const maiorId = demandas.reduce(function (maior, demanda) {
-    return demanda.id > maior ? demanda.id : maior;
-  }, 0);
-  return maiorId + 1;
-}
-
-/* Gera o proximo id de um item de uma lista interna (comentarios ou historico). */
-function proximoIdLista(lista) {
-  if (!lista || lista.length === 0) {
-    return 1;
-  }
-  const maiorId = lista.reduce(function (maior, item) {
-    return item.id > maior ? item.id : maior;
-  }, 0);
-  return maiorId + 1;
-}
-
-
-/* ==========================================================================
-   Usuarios e projetos
-   ========================================================================== */
-
-function listarUsuarios() {
-  return USUARIOS_INICIAIS;
-}
-
-function listarProjetos() {
-  return PROJETOS_INICIAIS;
-}
-
-function buscarUsuario(id) {
-  return USUARIOS_INICIAIS.find(function (usuario) { return usuario.id === Number(id); }) || null;
-}
-
-function buscarProjeto(id) {
-  return PROJETOS_INICIAIS.find(function (projeto) { return projeto.id === Number(id); }) || null;
-}
-
-/* Nome do responsavel para exibicao; demandas sem responsavel mostram um traco. */
-function nomeUsuario(id) {
-  const usuario = buscarUsuario(id);
-  return usuario ? usuario.nome : '-';
-}
-
-/*
- * Nomes de uma lista de responsaveis, separados por virgula.
- * Demandas ainda sem responsavel definido mostram um traco.
- */
-function nomesUsuarios(ids) {
-  if (!ids || ids.length === 0) {
-    return '-';
-  }
-  return ids.map(nomeUsuario).join(', ');
-}
-
-/* Tira os acentos de um texto. O banco grava "Em revisão"; as telas comparam com "Em revisao". */
-function semAcento(texto) {
-  return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-
-/*
- * Usuario autenticado no momento: o que a tela de login guardou no localStorage.
- * Sem login (tela aberta direto pelo arquivo), assume o primeiro usuario da carga.
- */
-// ponytail: os projetos do usuario ainda vem da tabela local acima; usuario novo
-// fica sem projeto. Trocar quando a API devolver os vinculos junto com o login.
 function usuarioLogado() {
-  let login = null;
+  let usuario = null;
   try {
-    login = JSON.parse(localStorage.getItem('usuario'));
+    usuario = JSON.parse(localStorage.getItem('usuario'));
   } catch (erro) {
-    login = null;
+    usuario = null;
   }
-  if (!login) {
-    return USUARIOS_INICIAIS[0];
+  if (!usuario) {
+    window.location.href = 'login.html';
+    return null;
   }
-  const local = buscarUsuario(login.id);
-  return {
-    id: login.id,
-    nome: login.nome,
-    perfil: semAcento(login.perfil),
-    projetos: local ? local.projetos : []
-  };
+  usuario.projetos = usuario.projetos || [];
+  return usuario;
 }
 
-function definirUsuarioLogado(id) {
-  localStorage.setItem(CHAVE_USUARIO_LOGADO, String(id));
+
+/* ==========================================================================
+   Chamada à API
+   ========================================================================== */
+
+/* Endereço da API do DemandaTrack (backend/, iniciado com "npm run dev"). */
+const API_URL = 'http://localhost:3000';
+
+/*
+ * Faz uma chamada à API e devolve sempre o mesmo formato, para a tela não
+ * precisar repetir o tratamento de erro:
+ *   { ok, status, dados, erro }
+ * ok é true quando a API respondeu 2xx; dados é o JSON da resposta; erro é a
+ * mensagem pronta para mostrar ao usuário (vazia quando deu certo).
+ *
+ * Quando a API recusa a requisição, ela responde { erro, detalhes }; os dois
+ * são juntados na mensagem. Se o servidor estiver desligado, o fetch falha,
+ * status fica 0 e a mensagem orienta o usuário.
+ */
+async function chamarApi(metodo, caminho, corpo) {
+  let resposta;
+  try {
+    resposta = await fetch(API_URL + caminho, {
+      method: metodo,
+      headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
+      body: corpo ? JSON.stringify(corpo) : undefined
+    });
+  } catch (erro) {
+    console.warn('Falha ao chamar a API:', erro);
+    return {
+      ok: false,
+      status: 0,
+      dados: null,
+      erro: 'A API não respondeu. Confira se o servidor está rodando em ' + API_URL + '.'
+    };
+  }
+
+  let dados = null;
+  try {
+    dados = await resposta.json();
+  } catch (erro) {
+    dados = null;
+  }
+
+  if (!resposta.ok) {
+    const texto = (dados && dados.erro) || 'Erro ' + resposta.status;
+    const detalhes = dados && Array.isArray(dados.detalhes) ? ' ' + dados.detalhes.join(' ') : '';
+    // Tira o ponto final que a API às vezes já manda, para não ficar "..".
+    return { ok: false, status: resposta.status, dados: dados, erro: texto.replace(/\.$/, '') + '.' + detalhes };
+  }
+  if (dados === null) {
+    return { ok: false, status: resposta.status, dados: null, erro: 'A API devolveu uma resposta inesperada.' };
+  }
+  return { ok: true, status: resposta.status, dados: dados, erro: '' };
 }

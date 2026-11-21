@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
   Autor da estrutura e do layout: Nathan Kenzo Puzipe
-  Ajustes para integracao com os dados: Pedro Tiezo Sales Shimizu
-  Integracao com a API (Reuniao 5): Nathan Kenzo Puzipe
-  Descricao: Tela de listagem de demandas. Os filtros e a tabela sao preenchidos
-             em tempo de execucao pelo arquivo js/listagem.js, com os dados de
-             GET /demandas (banco de dados).
+  Ajustes para integração com os dados: Pedro Tiezo Sales Shimizu
+  Integração com a API: Nathan Kenzo Puzipe
+  Descrição: Tela de listagem de demandas. Os filtros e a tabela são preenchidos
+             em tempo de execução pelo arquivo js/listagem.js, com os dados de
+             GET /demandas, GET /projetos e GET /usuarios (banco de dados).
 -->
 <html lang="pt-BR">
 
@@ -17,29 +17,26 @@
     <title>DemandaTrack - Demandas</title>
 
     <link rel="stylesheet" href="../css/listagem.css">
-    <link rel="stylesheet" href="../css/simulacao.css">
+    <link rel="stylesheet" href="../css/sessao.css">
 
 </head>
 
 <body>
 
-    <div id="cabecalho">
+    <!-- Cabeçalho e menu, iguais nas telas internas (ver js/sessao.js) -->
+    <header class="cabecalho">
+        <div class="logo">Demanda<span>Track</span></div>
 
-        <div class="logo">
-            Demanda<strong class="logo-destaque">Track</strong>
-        </div>
+        <nav class="menu">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="listagem.html" class="ativo">Demandas</a>
+            <a href="demanda.html" id="menu-nova-demanda">Nova Demanda</a>
+            <a href="login.html" id="link-sair">Sair</a>
+        </nav>
+    </header>
 
-        <div class="menu">
-            <a href="login.html" class="item-menu">Login</a>
-            <a href="dashboard.html" class="item-menu">Dashboard</a>
-            <div class="item-menu item-menu-ativo">Demandas</div>
-            <a href="demanda.html" class="item-menu">Nova Demanda</a>
-        </div>
-
-    </div>
-
-    <!-- Barra temporaria de simulacao de perfil (ver js/simulacao.js) -->
-    <div id="barra-simulacao"></div>
+    <!-- Barra com o usuário logado (ver js/sessao.js) -->
+    <div id="barra-usuario"></div>
 
 
     <div class="conteudo">
@@ -51,7 +48,7 @@
                     Lista de todas as demandas cadastradas no sistema
                 </p>
             </div>
-            <!-- Botao exibido apenas para os perfis que podem criar demandas -->
+            <!-- Botão exibido apenas para os perfis que podem criar demandas -->
             <a href="demanda.html" class="botao-nova-demanda oculto" id="botao-nova-demanda">
                 + Nova demanda
             </a>
@@ -62,8 +59,8 @@
 
             <div class="campo-filtro">
                 <label class="rotulo" for="filtro-busca">Buscar</label>
-                <input type="text" id="filtro-busca" class="campo-entrada"
-                       placeholder="Titulo ou descricao">
+                <input type="text" id="filtro-busca" class="campo-entrada" maxlength="100"
+                       placeholder="Título ou descrição">
             </div>
 
             <div class="campo-filtro">
@@ -82,7 +79,7 @@
             </div>
 
             <div class="campo-filtro">
-                <label class="rotulo" for="filtro-responsavel">Responsavel</label>
+                <label class="rotulo" for="filtro-responsavel">Responsável</label>
                 <select id="filtro-responsavel" class="campo-entrada"></select>
             </div>
 
@@ -96,9 +93,7 @@
                 <select id="filtro-ordem" class="campo-entrada"></select>
             </div>
 
-            <button type="button" class="botao-filtrar" id="botao-limpar">
-                <strong>Limpar filtros</strong>
-            </button>
+            <button type="button" class="botao-limpar" id="botao-limpar">Limpar filtros</button>
 
         </div>
 
@@ -110,23 +105,23 @@
 
             <p class="contador-resultados" id="contador-resultados"></p>
 
-            <table class="tabela-demandas" border="0">
+            <table class="tabela-demandas">
 
                 <thead>
                     <tr class="linha-cabecalho">
-                        <th>Titulo</th>
+                        <th>Título</th>
                         <th>Tipo</th>
                         <th>Prioridade</th>
                         <th>Status</th>
                         <th>Projeto</th>
-                        <th>Responsaveis</th>
-                        <th>Criacao</th>
+                        <th>Responsável</th>
+                        <th>Criação</th>
                         <th>Prazo</th>
                         <th></th>
                     </tr>
                 </thead>
 
-                <!-- As linhas sao geradas por js/listagem.js a partir das demandas -->
+                <!-- As linhas são geradas por js/listagem.js a partir das demandas -->
                 <tbody id="corpo-tabela"></tbody>
 
             </table>
@@ -139,7 +134,7 @@
     <script src="../js/permissoes.js"></script>
     <script src="../js/formato.js"></script>
     <script src="../js/validacoes.js"></script>
-    <script src="../js/simulacao.js"></script>
+    <script src="../js/sessao.js"></script>
     <script src="../js/listagem.js"></script>
 
 </body>

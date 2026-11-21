@@ -1,5 +1,5 @@
 /**
- * Autor: [Felipe Oliveira Barbosa]
+ * Autor: Felipe Oliveira Barbosa
  *
  * Junta as rotas de todos os integrantes. Cada um trabalha no seu arquivo,
  * assim evita conflito no Git.

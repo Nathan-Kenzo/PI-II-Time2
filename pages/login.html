@@ -1,45 +1,47 @@
 <!DOCTYPE html>
-
+<!--
+  Autor: Felipe Oliveira dos Santos
+  Descrição: Tela de login. As validações e a chamada a POST /login ficam em js/login.js.
+-->
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tela de Login</title>
+    <title>Login - DemandaTrack</title>
     <link rel="stylesheet" href="../css/login.css">
     <script src="../js/login.js" defer></script>
 </head>
 
+<body>
+
 <header id="cabecalho">
-    <center>
-        <h1 id="demanda">Demanda</h1>
-        <h1 id="track">Track</h1>
-    </center>
+    <h1 id="demanda">Demanda</h1>
+    <h1 id="track">Track</h1>
 </header>
 
-<body>
-    <center>
-    <div id="formulario">
-        <h2>Login</h2>
+<div id="formulario">
+    <h2>Login</h2>
 
-    <form id="formLogin">
+    <form id="formLogin" novalidate>
 
-        <input type="text" id="email" placeholder="E-mail" required>
+        <input type="email" id="email" placeholder="E-mail" autocomplete="email" required>
         <div id="erroEmail" class="erro"></div>
         <br><br>
 
-        <input type="password" id="senha" placeholder="Senha" required>
+        <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" required>
         <div id="erroSenha" class="erro"></div>
         <br>
 
-        <p class="link-ajuda"><a href="../index.html">Esqueceu sua senha?</a></p>
         <p class="link-ajuda"><a href="cadastro.html">Não tem uma conta? Cadastre-se aqui</a></p>
         <br>
+
+        <!-- Erro devolvido pela API ou falta de resposta do servidor -->
+        <div id="erroGeral" class="erro" role="alert"></div>
 
         <button type="submit" id="botao">Entrar</button>
 
     </form>
 </div>
-</center>
 
 </body>
 </html>

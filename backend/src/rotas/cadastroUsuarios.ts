@@ -36,14 +36,14 @@ const ORA_CHAVE_DUPLICADA = 1;
 function listarErros(nome: string, email: string, senha: string): string[] {
   const erros: string[] = [];
   if (nome.length < NOME_MIN || nome.length > NOME_MAX) {
-    erros.push(`nome deve ter de ${NOME_MIN} a ${NOME_MAX} caracteres.`);
+    erros.push(`O nome deve ter de ${NOME_MIN} a ${NOME_MAX} caracteres.`);
   }
   if (email.length > EMAIL_MAX || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    erros.push("email deve ser um endereço de e-mail válido.");
+    erros.push("Informe um endereço de e-mail válido.");
   }
   const senhaForte = /[A-Z]/.test(senha) && /[a-z]/.test(senha) && /[0-9]/.test(senha);
   if (senha.length < SENHA_MIN || senha.length > SENHA_MAX || !senhaForte) {
-    erros.push(`senha deve ter pelo menos ${SENHA_MIN} caracteres, com letra maiúscula, minúscula e número.`);
+    erros.push(`A senha deve ter pelo menos ${SENHA_MIN} caracteres, com letra maiúscula, minúscula e número.`);
   }
   return erros;
 }

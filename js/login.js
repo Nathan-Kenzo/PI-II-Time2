@@ -1,14 +1,20 @@
 /**
  * Autor: Felipe Oliveira dos Santos
  *
- * Validação da tela de login.
+ * Validação da tela de login e chamada a POST /login.
  */
+
+// quem já entrou não precisa fazer login de novo
+if (localStorage.getItem("usuario")) {
+    window.location.href = "dashboard.html";
+}
 
 const formulario = document.querySelector("#formLogin");
 const campoEmail = document.querySelector("#email");
 const campoSenha = document.querySelector("#senha");
 const erroEmail = document.querySelector("#erroEmail");
 const erroSenha = document.querySelector("#erroSenha");
+const erroGeral = document.querySelector("#erroGeral");
 
 const camposComErro = [
     campoEmail,
@@ -17,7 +23,8 @@ const camposComErro = [
 
 const mensagensDeErro = [
     erroEmail,
-    erroSenha
+    erroSenha,
+    erroGeral
 ];
 
 // exibe a mensagem de erro e destaca o campo
@@ -47,71 +54,61 @@ formulario.addEventListener("submit", async function (event) {
 
     let formValido = true;
 
-    // validação do nome de usuário
+    // validação do e-mail
     if (email === "") {
-        mostrarErro(campoEmail, erroEmail, "O nome de usuário é obrigatório!");
+        mostrarErro(campoEmail, erroEmail, "O e-mail é obrigatório!");
         formValido = false;
-    } else if (email.length < 3) {
-        mostrarErro(campoEmail, erroEmail, "O nome de usuário deve possuir pelo menos 3 caracteres!");
+    } else if (campoEmail.validity.typeMismatch) {
+        mostrarErro(campoEmail, erroEmail, "Informe um e-mail válido!");
         formValido = false;
     }
 
-    // validação da senha
+    // validação da senha (as regras de senha forte valem só no cadastro)
     if (senha === "") {
         mostrarErro(campoSenha, erroSenha, "A senha é obrigatória!");
         formValido = false;
-    } else if (senha.length < 8) {
-        mostrarErro(campoSenha, erroSenha, "A senha deve possuir pelo menos 8 caracteres!");
-        formValido = false;
     }
 
-    // redireciona para a página inicial quando os dados forem válidos
-    if (formValido) {
-        try {
+    if (!formValido) {
+        return;
+    }
 
-        const resposta = await fetch(
-            "http://localhost:3000/login",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email,
-                    senha
-                })
-            }
-        );
-
-        const dados = await resposta.json();
-
-        if (!resposta.ok) {
-
-            mostrarErro(
-                campoEmail,
-                erroEmail,
-                dados.erro || "Erro ao realizar login."
-            );
-
-            return;
-        }
-
-        localStorage.setItem(
-            "usuario",
-            JSON.stringify(dados.usuario)
-        );
-
-        window.location.href = "dashboard.html";
-
+    // falha aqui = servidor fora do ar
+    let resposta;
+    try {
+        resposta = await fetch("http://localhost:3000/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, senha })
+        });
     } catch (erro) {
-
-        mostrarErro(
-            campoEmail,
-            erroEmail,
-            "Não foi possível conectar ao servidor."
-        );
-
         console.error(erro);
+        erroGeral.innerText = "Não foi possível conectar ao servidor. Confira se a API está rodando.";
+        return;
     }
+
+    let dados = {};
+    try {
+        dados = await resposta.json();
+    } catch (erro) {
+        dados = {};
     }
+
+    // e-mail ou senha errados: destaca os dois campos sem dizer qual errou
+    if (resposta.status === 401) {
+        campoEmail.classList.add("erro-campo");
+        campoSenha.classList.add("erro-campo");
+        erroGeral.innerText = "E-mail ou senha incorretos.";
+        return;
+    }
+
+    if (!resposta.ok || !dados.usuario) {
+        erroGeral.innerText = dados.erro || "Erro ao realizar login.";
+        return;
+    }
+
+    // guarda { id, nome, email, perfil, projetos } para as outras telas (js/dados.js)
+    localStorage.setItem("usuario", JSON.stringify(dados.usuario));
+
+    window.location.href = "dashboard.html";
 });

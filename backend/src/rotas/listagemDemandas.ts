@@ -10,6 +10,7 @@
 import { Router, Request, Response } from "express";
 import { executar } from "../bd";
 import { TIPOS, PRIORIDADES, STATUS } from "../tipos";
+import { normalizar, acharValor } from "./apoioDemandas";
 
 const router = Router();
 
@@ -24,18 +25,6 @@ const BUSCA_MAX = 100;
 // listas (TRANSLATE) para a busca não depender de acento nem de maiúscula.
 const COM_ACENTO = "áàâãäéèêëíìîïóòôõöúùûüç";
 const SEM_ACENTO = "aaaaaeeeeiiiiooooouuuuc";
-
-// Remove acentos e maiúsculas, para a busca e os filtros não dependerem disso
-function normalizar(texto: string): string {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-}
-
-// Procura o valor oficial na lista ("em revisao" vira "Em revisão"). Se não existir, devolve undefined
-function acharValor(entrada: string, lista: string[]): string | undefined {
-  return lista.find(function (valor) {
-    return normalizar(valor) === normalizar(entrada);
-  });
-}
 
 // Lê um parâmetro da URL como texto.
 // Devolve undefined se não veio (ou veio vazio) e null se veio repetido (?a=1&a=2)
@@ -188,6 +177,13 @@ router.get("/demandas", async function (req: Request, res: Response) {
 
   // ---------- 2) Quem está pedindo a lista ----------
   // Sem usuário identificado (ou com um id que não existe) a resposta é 401.
+  if (parametros.usuarioId === null) {
+    res.status(400).json({
+      erro: "Parâmetros inválidos",
+      detalhes: ['O parâmetro "usuarioId" deve ser informado uma única vez.']
+    });
+    return;
+  }
   if (!parametros.usuarioId || !/^\d+$/.test(parametros.usuarioId)) {
     res.status(401).json({
       erro: "Usuário não identificado",

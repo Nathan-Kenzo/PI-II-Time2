@@ -1,8 +1,9 @@
 /**
  * Autor: Felipe Oliveira Barbosa
  *
- * Rota do dashboard: GET /dashboard
- * Lê os indicadores do banco Oracle.
+ * Rota do dashboard: GET /dashboard?usuarioId=N
+ * Lê os indicadores do banco Oracle. O Administrador vê todos os projetos;
+ * Líder e Membro contam só as demandas dos projetos a que estão vinculados.
  *
  * Critérios da equipe:
  *   - "Em aberto": não está Concluída nem Cancelada.
@@ -13,12 +14,23 @@
 import { Router, Request, Response } from "express";
 import { executar } from "../bd";
 import { TIPOS, PRIORIDADES, STATUS } from "../tipos";
+import { ADMINISTRADOR, ErroDeRequisicao, comTratamentoDeErros, exigirUsuario } from "./apoioDemandas";
 
 const router = Router();
 
 const DIAS_ALERTA = 7;
 
 const STATUS_ENCERRADOS = { concluida: "Concluída", cancelada: "Cancelada" };
+
+// Condição que deixa só as demandas dos projetos vinculados ao usuário
+const SQL_VINCULO = "d.projeto_id IN (SELECT up.projeto_id FROM usuario_projeto up WHERE up.usuario_id = :usuarioId)";
+
+// Filtro de cada consulta: o Administrador não tem filtro ("1 = 1").
+// O id entra como variável de ligação, só quando aparece no SQL (o driver recusa sobras).
+interface Filtro {
+  sql: string;
+  valores: { usuarioId?: number };
+}
 
 interface LinhaCritica {
   id: number;
@@ -39,12 +51,14 @@ interface LinhaProxima {
 
 
 // Conta as demandas por valor de uma coluna (valores sem demanda ficam com 0)
-async function contarPor(coluna: "status" | "prioridade" | "tipo", valores: string[]) {
+async function contarPor(coluna: "status" | "prioridade" | "tipo", valores: string[], filtro: Filtro) {
   // a coluna vem só dessas três opções, nunca do usuário
   const resultado = await executar<{ valor: string; quantidade: number }>(
-    `SELECT ${coluna} AS "valor", COUNT(*) AS "quantidade"
-       FROM demanda
-      GROUP BY ${coluna}`
+    `SELECT d.${coluna} AS "valor", COUNT(*) AS "quantidade"
+       FROM demanda d
+      WHERE ${filtro.sql}
+      GROUP BY d.${coluna}`,
+    filtro.valores
   );
   const linhas = resultado.rows || [];
 
@@ -61,7 +75,13 @@ async function contarPor(coluna: "status" | "prioridade" | "tipo", valores: stri
 }
 
 
-router.get("/dashboard", async function (req: Request, res: Response) {
+router.get("/dashboard", comTratamentoDeErros(async function (req: Request, res: Response) {
+  // Sem usuário identificado (ou com um id que não existe) a resposta é 401
+  const usuario = await exigirUsuario(req.query.usuarioId);
+  const filtro: Filtro = usuario.perfil === ADMINISTRADOR
+    ? { sql: "1 = 1", valores: {} }
+    : { sql: SQL_VINCULO, valores: { usuarioId: usuario.id } };
+
   let diasAlerta = DIAS_ALERTA;
 
   if (req.query.dias !== undefined) {
@@ -69,15 +89,15 @@ router.get("/dashboard", async function (req: Request, res: Response) {
     const numero = Number(texto);
 
     if (typeof texto !== "string" || texto.trim() === "" || !Number.isInteger(numero) || numero < 0) {
-      res.status(400).json({ erro: "O parâmetro 'dias' deve ser um número inteiro maior ou igual a zero" });
-      return;
+      throw new ErroDeRequisicao(400, "O parâmetro 'dias' deve ser um número inteiro maior ou igual a zero");
     }
 
     diasAlerta = numero;
   }
 
   const resultadoTotal = await executar<{ total: number }>(
-    `SELECT COUNT(*) AS "total" FROM demanda`
+    `SELECT COUNT(*) AS "total" FROM demanda d WHERE ${filtro.sql}`,
+    filtro.valores
   );
   const total = resultadoTotal.rows ? resultadoTotal.rows[0].total : 0;
 
@@ -89,8 +109,9 @@ router.get("/dashboard", async function (req: Request, res: Response) {
        LEFT JOIN usuario u ON u.id = d.responsavel_id
       WHERE d.prioridade = :prioridade
         AND d.status NOT IN (:concluida, :cancelada)
+        AND ${filtro.sql}
       ORDER BY d.id`,
-    { prioridade: "Crítica", ...STATUS_ENCERRADOS }
+    { prioridade: "Crítica", ...STATUS_ENCERRADOS, ...filtro.valores }
   );
   const criticas = resultadoCriticas.rows || [];
 
@@ -104,8 +125,9 @@ router.get("/dashboard", async function (req: Request, res: Response) {
       WHERE d.prazo IS NOT NULL
         AND d.status NOT IN (:concluida, :cancelada)
         AND d.prazo <= TRUNC(SYSDATE) + :dias
+        AND ${filtro.sql}
       ORDER BY d.prazo, d.id`,
-    { ...STATUS_ENCERRADOS, dias: diasAlerta }
+    { ...STATUS_ENCERRADOS, dias: diasAlerta, ...filtro.valores }
   );
 
   const proximasDoPrazo = (resultadoProximas.rows || []).map(function (linha) {
@@ -121,13 +143,13 @@ router.get("/dashboard", async function (req: Request, res: Response) {
 
   res.status(200).json({
     total: total,
-    porStatus: await contarPor("status", STATUS),
-    porPrioridade: await contarPor("prioridade", PRIORIDADES),
-    porTipo: await contarPor("tipo", TIPOS),
+    porStatus: await contarPor("status", STATUS, filtro),
+    porPrioridade: await contarPor("prioridade", PRIORIDADES, filtro),
+    porTipo: await contarPor("tipo", TIPOS, filtro),
     criticasEmAberto: criticas,
     diasAlerta: diasAlerta,
     proximasDoPrazo: proximasDoPrazo
   });
-});
+}));
 
 export default router;

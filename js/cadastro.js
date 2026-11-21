@@ -1,26 +1,24 @@
 /**
  * Autor: Felipe Oliveira dos Santos
  *
- * Validação da tela de cadastro.
+ * Validação da tela de cadastro e chamada a POST /usuarios.
  */
 
 const formulario = document.querySelector("#formCadastro");
 
 const campoNome = document.querySelector("#nome");
-const campoUser = document.querySelector("#user");
 const campoEmail = document.querySelector("#email");
 const campoSenha = document.querySelector("#senha");
 const campoConfirmar = document.querySelector("#confirmar");
 
 const erroNome = document.querySelector("#erroNome");
-const erroUser = document.querySelector("#erroUser");
 const erroEmail = document.querySelector("#erroEmail");
 const erroSenha = document.querySelector("#erroSenha");
 const erroConfirmar = document.querySelector("#erroConfirmar");
+const erroGeral = document.querySelector("#erroGeral");
 
 const camposComErro = [
     campoNome,
-    campoUser,
     campoEmail,
     campoSenha,
     campoConfirmar
@@ -28,10 +26,10 @@ const camposComErro = [
 
 const mensagensDeErro = [
     erroNome,
-    erroUser,
     erroEmail,
     erroSenha,
-    erroConfirmar
+    erroConfirmar,
+    erroGeral
 ];
 
 // exibe a mensagem de erro e destaca o campo
@@ -57,7 +55,6 @@ formulario.addEventListener("submit", async function (event) {
     limparErros();
 
     const nome = campoNome.value.trim();
-    const user = campoUser.value.trim();
     const email = campoEmail.value.trim();
     const senha = campoSenha.value;
     const confirmar = campoConfirmar.value;
@@ -73,15 +70,6 @@ formulario.addEventListener("submit", async function (event) {
         formValido = false;
     } else if (nome.split(/\s+/).length < 2) {
         mostrarErro(campoNome, erroNome, "Informe nome e sobrenome!");
-        formValido = false;
-    }
-
-    // validação do nome de usuário
-    if (user === "") {
-        mostrarErro(campoUser, erroUser, "O nome de usuário é obrigatório!");
-        formValido = false;
-    } else if (user.length < 3) {
-        mostrarErro(campoUser, erroUser, "O nome de usuário deve possuir pelo menos 3 caracteres!");
         formValido = false;
     }
 
@@ -120,25 +108,40 @@ formulario.addEventListener("submit", async function (event) {
         return;
     }
 
-    // grava o usuário no banco pela API; o nome de usuário não é enviado
-    // porque a tabela usuario não tem essa coluna (o login é pelo e-mail)
+    // grava o usuário no banco pela API (o login é feito pelo e-mail)
+    let resposta;
     try {
-        const resposta = await fetch("http://localhost:3000/usuarios", {
+        resposta = await fetch("http://localhost:3000/usuarios", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nome, email, senha })
         });
-        const dados = await resposta.json();
-
-        if (!resposta.ok) {
-            const detalhes = Array.isArray(dados.detalhes) ? " " + dados.detalhes.join(" ") : "";
-            mostrarErro(campoEmail, erroEmail, (dados.erro || "Erro ao cadastrar.") + detalhes);
-            return;
-        }
-
-        // cadastro gravado: segue para a tela de login
-        window.location.href = "login.html";
     } catch (erro) {
-        mostrarErro(campoEmail, erroEmail, "A API não respondeu. Confira se o servidor está rodando.");
+        console.error(erro);
+        erroGeral.innerText = "A API não respondeu. Confira se o servidor está rodando.";
+        return;
     }
+
+    let dados = {};
+    try {
+        dados = await resposta.json();
+    } catch (erro) {
+        dados = {};
+    }
+
+    // e-mail já cadastrado: o erro é do campo e-mail
+    if (resposta.status === 409) {
+        mostrarErro(campoEmail, erroEmail, dados.erro || "Já existe um usuário cadastrado com este e-mail.");
+        return;
+    }
+
+    if (!resposta.ok) {
+        const detalhes = Array.isArray(dados.detalhes) ? " " + dados.detalhes.join(" ") : "";
+        erroGeral.innerText = (dados.erro || "Erro ao cadastrar") + "." + detalhes;
+        return;
+    }
+
+    // cadastro gravado: avisa o perfil inicial e segue para a tela de login
+    alert("Cadastro realizado! Você entrou como Membro da Equipe; peça ao administrador para vincular você a um projeto.");
+    window.location.href = "login.html";
 });

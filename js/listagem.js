@@ -1,26 +1,25 @@
 /**
  * Autor: Nathan Kenzo Puzipe
- * Descricao: Controle da tela de listagem de demandas (pages/listagem.html).
+ * Descrição: Controle da tela de listagem de demandas (pages/listagem.html).
  *
+ * usuarioLogado() e chamarApi() estão em js/dados.js; criarEtiqueta() e
+ * formatarData() em js/formato.js; validarBusca() e validarOpcao() em js/validacoes.js.
  */
 
 (function () {
   'use strict';
 
   /* ===================================================================
-   * 1. CONFIGURACAO
+   * 1. CONFIGURAÇÃO
    * =================================================================== */
 
-  /* Endereco da API do DemandaTrack (backend/, iniciado com "npm run dev"). */
-  const API_URL = 'http://localhost:3000';
-
-  /* Tempo de espera depois da ultima tecla da busca, para nao chamar a API a cada letra. */
+  /* Tempo de espera depois da última tecla da busca, para não chamar a API a cada letra. */
   const ATRASO_BUSCA_MS = 300;
 
-  /* Ordenacao padrao: demandas mais recentes primeiro. */
+  /* Ordenação padrão: demandas mais recentes primeiro. */
   const ORDEM_PADRAO = 'dataCriacao:desc';
 
-  /* Valor do filtro de responsavel que significa "demandas sem responsavel". */
+  /* Valor do filtro de responsável que significa "demandas sem responsável". */
   const SEM_RESPONSAVEL = 'sem';
 
   /* IDs dos elementos de pages/listagem.html. */
@@ -34,14 +33,17 @@
     ordem: 'filtro-ordem'
   };
 
-  /* Valores aceitos pela API (os mesmos de backend/src/tipos.ts). */
+  /* Valores aceitos pela API (as mesmas listas de js/dados.js, com acento). */
   const OPCOES = {
-    status: ['Aberta', 'Em andamento', 'Em revisão', 'Concluída', 'Cancelada'],
-    prioridade: ['Crítica', 'Alta', 'Média', 'Baixa'],
-    tipo: ['Tarefa', 'Defeito', 'Melhoria', 'Documentação']
+    status: Object.values(STATUS),
+    prioridade: PRIORIDADES,
+    tipo: TIPOS
   };
 
-  /* Opcoes de ordenacao: o valor e "campo:ordem", como a API espera. */
+  /*
+   * Opções de ordenação: o valor é "campo:ordem", como a API espera.
+   * O status segue a ordem do fluxo (Aberta ... Concluída, Cancelada).
+   */
   const OPCOES_ORDEM = [
     { valor: 'dataCriacao:desc', rotulo: 'Mais recentes' },
     { valor: 'dataCriacao:asc', rotulo: 'Mais antigas' },
@@ -50,7 +52,7 @@
     { valor: 'prazo:asc', rotulo: 'Prazo (mais próximo)' },
     { valor: 'prazo:desc', rotulo: 'Prazo (mais distante)' },
     { valor: 'status:asc', rotulo: 'Status (Aberta primeiro)' },
-    { valor: 'status:desc', rotulo: 'Status (Concluída primeiro)' }
+    { valor: 'status:desc', rotulo: 'Status (Cancelada primeiro)' }
   ];
 
 
@@ -59,36 +61,20 @@
    * =================================================================== */
 
   const campos = {};              // elementos dos filtros, por chave
-  let usuario = null;             // usuario logado
-  let requisicaoAtual = 0;        // numero da ultima chamada, para ignorar respostas antigas
+  let usuario = null;             // usuário logado
+  let requisicaoAtual = 0;        // número da última chamada, para ignorar respostas antigas
   let temporizadorBusca = null;   // espera da busca (debounce)
-  let ultimaConsulta = null;      // query string da ultima chamada, para nao repetir a mesma
-  let totalGeral = null;          // quantas demandas o usuario enxerga sem filtro
-  let idsProjetos = null;         // ids validos do filtro de projeto (null = ainda nao carregou)
-  let idsResponsaveis = null;     // ids validos do filtro de responsavel (null = ainda nao carregou)
+  let ultimaConsulta = null;      // query string da última chamada, para não repetir a mesma
+  let totalGeral = null;          // quantas demandas o usuário enxerga sem filtro
+  let idsProjetos = null;         // ids válidos do filtro de projeto (null = não carregou)
+  let idsResponsaveis = null;     // ids válidos do filtro de responsável (null = não carregou)
 
 
   /* ===================================================================
-   * 3. FUNCOES AUXILIARES
+   * 3. FUNÇÕES AUXILIARES
    * =================================================================== */
 
-  /* Remove os acentos de um texto (usado para achar a cor da etiqueta). */
-  function semAcento(texto) {
-    return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
-
-  /*
-   * Etiqueta colorida de status ou prioridade.
-   * A API devolve os valores com acento ("Crítica"); o mapa de cores de
-   * js/formato.js usa os valores sem acento, por isso a conversao.
-   */
-  function criarEtiquetaDaApi(valor) {
-    const etiqueta = criarEtiqueta(valor);
-    etiqueta.className = 'etiqueta ' + classeDaEtiqueta(semAcento(valor));
-    return etiqueta;
-  }
-
-  /* Preenche um select com a opcao "Todos" e as opcoes informadas ({ valor, rotulo }). */
+  /* Preenche um select com a opção "Todos" e as opções informadas ({ valor, rotulo }). */
   function montarSelect(select, rotuloTodos, opcoes) {
     select.innerHTML = '';
 
@@ -105,7 +91,7 @@
     });
   }
 
-  /* Transforma uma lista de textos em opcoes cujo valor e o proprio texto. */
+  /* Transforma uma lista de textos em opções cujo valor é o próprio texto. */
   function opcoesDeTextos(textos) {
     return textos.map(function (texto) {
       return { valor: texto, rotulo: texto };
@@ -116,12 +102,12 @@
   function lerFiltros() {
     const filtros = {};
     Object.keys(IDS).forEach(function (chave) {
-      filtros[chave] = campos[chave] ? campos[chave].value : '';
+      filtros[chave] = campos[chave].value;
     });
     return filtros;
   }
 
-  /* Algum filtro de texto ou de lista esta preenchido? (a ordenacao nao conta) */
+  /* Algum filtro de texto ou de lista está preenchido? (a ordenação não conta) */
   function haFiltroAtivo(filtros) {
     return ['busca', 'status', 'prioridade', 'tipo', 'responsavel', 'projeto'].some(function (chave) {
       return filtros[chave] !== '';
@@ -130,10 +116,10 @@
 
 
   /* ===================================================================
-   * 4. VALIDACAO DOS FILTROS (Reuniao 3)
+   * 4. VALIDAÇÃO DOS FILTROS
    * =================================================================== */
 
-  /* Devolve um objeto { chave: mensagem } so com os filtros invalidos. */
+  /* Devolve um objeto { chave: mensagem } só com os filtros inválidos. */
   function validarFiltros(filtros) {
     const erros = {};
 
@@ -150,7 +136,7 @@
       if (erro) erros[regra[0]] = erro;
     });
 
-    // Projeto e responsavel so sao conferidos depois que a lista foi carregada.
+    // Projeto e responsável só são conferidos se a lista veio da API.
     if (idsProjetos !== null) {
       const erro = validarOpcao(filtros.projeto, idsProjetos, 'Selecione um projeto válido.');
       if (erro) erros.projeto = erro;
@@ -184,8 +170,6 @@
   /* Mostra (ou apaga, se a mensagem for vazia) o erro de um filtro. */
   function mostrarErro(chave, mensagem) {
     const campo = campos[chave];
-    if (!campo) return;
-
     const el = elementoDeErro(campo);
     if (mensagem) {
       campo.setAttribute('aria-invalid', 'true');
@@ -202,10 +186,10 @@
 
 
   /* ===================================================================
-   * 5. CHAMADA A API
+   * 5. CHAMADA À API
    * =================================================================== */
 
-  /* Monta a query string de GET /demandas a partir dos filtros ja validados. */
+  /* Monta a query string de GET /demandas a partir dos filtros já validados. */
   function montarParametros(filtros) {
     const parametros = new URLSearchParams();
     parametros.set('usuarioId', usuario.id);
@@ -223,55 +207,53 @@
   }
 
   /*
-   * Chama a API e devolve sempre o mesmo formato, para a tela nao repetir o
-   * tratamento de erro:
-   *   { ok: true,  dados: <JSON da resposta> }
-   *   { ok: false, mensagem: <texto pronto para mostrar ao usuario> }
-   * Quando a API recusa o pedido ela responde { erro, detalhes }; os dois sao
-   * juntados na mensagem. Se o servidor estiver desligado, o fetch falha.
+   * Preenche os selects de projeto e de responsável com o que vem do banco:
+   * GET /projetos?usuarioId= (só os projetos que o usuário enxerga) e
+   * GET /usuarios. Se a API falhar, o select fica só com "Todos".
    */
-  async function chamarApi(caminho) {
-    try {
-      const resposta = await fetch(API_URL + caminho);
-      let dados = {};
-      try {
-        dados = await resposta.json();
-      } catch (erroDeLeitura) {
-        dados = {};
-      }
+  async function carregarOpcoesDaApi() {
+    const respostas = await Promise.all([
+      chamarApi('GET', '/projetos?usuarioId=' + encodeURIComponent(usuario.id)),
+      chamarApi('GET', '/usuarios')
+    ]);
 
-      if (!resposta.ok) {
-        const detalhes = Array.isArray(dados.detalhes) ? ' ' + dados.detalhes.join(' ') : '';
-        return { ok: false, mensagem: (dados.erro || 'Erro ' + resposta.status) + '.' + detalhes };
-      }
-      return { ok: true, dados: dados };
-    } catch (erro) {
-      console.warn('Falha ao chamar a API:', erro);
-      return { ok: false, mensagem: 'A API não respondeu. Confira se o servidor está rodando em ' + API_URL + '.' };
+    if (respostas[0].ok) {
+      const opcoesProjeto = respostas[0].dados.projetos.map(function (projeto) {
+        return { valor: String(projeto.id), rotulo: projeto.nome };
+      });
+      montarSelect(campos.projeto, 'Todos', opcoesProjeto);
+      idsProjetos = opcoesProjeto.map(function (o) { return o.valor; });
     }
+
+    if (respostas[1].ok) {
+      const opcoesResponsavel = respostas[1].dados.usuarios.map(function (pessoa) {
+        return { valor: String(pessoa.id), rotulo: pessoa.nome };
+      });
+      idsResponsaveis = opcoesResponsavel.map(function (o) { return o.valor; });
+      opcoesResponsavel.push({ valor: SEM_RESPONSAVEL, rotulo: 'Sem responsável' });
+      montarSelect(campos.responsavel, 'Todos', opcoesResponsavel);
+    }
+
+    // Um erro aqui (API fora do ar, usuário inválido) também aparece na carga da
+    // lista logo em seguida, então só fica registrado no console.
+    respostas.forEach(function (resposta) {
+      if (!resposta.ok) console.warn('Filtro não carregado:', resposta.erro);
+    });
   }
 
 
   /* ===================================================================
-   * 6. EXIBICAO DO RESULTADO
+   * 6. EXIBIÇÃO DO RESULTADO
    * =================================================================== */
 
   /* Faixa de erro acima da tabela. Texto vazio esconde a faixa. */
   function mostrarAviso(texto) {
-    let aviso = document.getElementById('aviso-erro');
-    if (!aviso) {
-      aviso = document.createElement('p');
-      aviso.id = 'aviso-erro';
-      aviso.className = 'resumo-erros';
-      aviso.setAttribute('role', 'alert');
-      const caixa = document.querySelector('.caixa-tabela');
-      caixa.parentNode.insertBefore(aviso, caixa);
-    }
+    const aviso = document.getElementById('aviso-erro');
     aviso.textContent = texto;
     aviso.hidden = texto === '';
   }
 
-  /* Cria uma celula de tabela com texto simples (textContent: nada vira HTML). */
+  /* Cria uma célula de tabela com texto simples (textContent: nada vira HTML). */
   function criarCelula(texto) {
     const td = document.createElement('td');
     td.textContent = texto;
@@ -286,17 +268,17 @@
     tr.appendChild(criarCelula(demanda.tipo));
 
     const tdPrioridade = document.createElement('td');
-    tdPrioridade.appendChild(criarEtiquetaDaApi(demanda.prioridade));
+    tdPrioridade.appendChild(criarEtiqueta(demanda.prioridade));
     tr.appendChild(tdPrioridade);
 
     const tdStatus = document.createElement('td');
-    tdStatus.appendChild(criarEtiquetaDaApi(demanda.status));
+    tdStatus.appendChild(criarEtiqueta(demanda.status));
     tr.appendChild(tdStatus);
 
     tr.appendChild(criarCelula(demanda.projeto));
 
     const tdResponsavel = criarCelula(demanda.responsavel || '-');
-    tdResponsavel.className = 'coluna-responsaveis';
+    tdResponsavel.className = 'coluna-responsavel';
     tr.appendChild(tdResponsavel);
 
     tr.appendChild(criarCelula(formatarData(demanda.dataCriacao)));
@@ -336,7 +318,6 @@
   /* Texto "Exibindo X de Y demandas." acima da tabela. */
   function mostrarContador(exibidas) {
     const contador = document.getElementById('contador-resultados');
-    if (!contador) return;
 
     if (totalGeral === null) {
       contador.textContent = exibidas + (exibidas === 1 ? ' demanda encontrada.' : ' demandas encontradas.');
@@ -346,45 +327,6 @@
       (totalGeral === 1 ? ' demanda.' : ' demandas.');
   }
 
-  /*
-   * Monta os selects de projeto e de responsavel com o que veio na primeira
-   * carga (sem filtros). Assim aparecem so os projetos e as pessoas das
-   * demandas que este usuario pode ver.
-   */
-  function montarOpcoesDaLista(demandas) {
-    const projetos = {};
-    const responsaveis = {};
-    let haSemResponsavel = false;
-
-    demandas.forEach(function (demanda) {
-      projetos[demanda.projetoId] = demanda.projeto;
-      if (demanda.responsavelId === null) {
-        haSemResponsavel = true;
-      } else {
-        responsaveis[demanda.responsavelId] = demanda.responsavel;
-      }
-    });
-
-    function ordenadoPorNome(mapa) {
-      return Object.keys(mapa)
-        .map(function (id) { return { valor: id, rotulo: mapa[id] }; })
-        .sort(function (a, b) { return a.rotulo.localeCompare(b.rotulo, 'pt-BR'); });
-    }
-
-    const opcoesProjeto = ordenadoPorNome(projetos);
-    const opcoesResponsavel = ordenadoPorNome(responsaveis);
-    if (haSemResponsavel) {
-      opcoesResponsavel.push({ valor: SEM_RESPONSAVEL, rotulo: 'Sem responsável' });
-    }
-
-    montarSelect(campos.projeto, 'Todos', opcoesProjeto);
-    montarSelect(campos.responsavel, 'Todos', opcoesResponsavel);
-
-    idsProjetos = opcoesProjeto.map(function (o) { return o.valor; });
-    idsResponsaveis = opcoesResponsavel.map(function (o) { return o.valor; })
-      .filter(function (valor) { return valor !== SEM_RESPONSAVEL; });
-  }
-
 
   /* ===================================================================
    * 7. CARGA DA LISTA
@@ -392,26 +334,26 @@
 
   /*
    * Valida os filtros e, se estiverem corretos, busca a lista na API.
-   * "digitando" e true quando a chamada vem da busca por teclas: nesse caso um
-   * erro novo da busca ainda nao e mostrado (so ao sair do campo), para nao
-   * acusar erro enquanto a pessoa esta no meio da palavra.
+   * "digitando" é true quando a chamada vem da busca por teclas: nesse caso um
+   * erro novo da busca ainda não é mostrado (só ao sair do campo), para não
+   * acusar erro enquanto a pessoa está no meio da palavra.
    */
   async function carregar(digitando) {
     const filtros = lerFiltros();
     const erros = validarFiltros(filtros);
 
     Object.keys(IDS).forEach(function (chave) {
-      const jaMostrandoErro = campos[chave] && campos[chave].classList.contains('invalido');
+      const jaMostrandoErro = campos[chave].classList.contains('invalido');
       const esconderPorEnquanto = digitando && chave === 'busca' && !jaMostrandoErro;
       mostrarErro(chave, esconderPorEnquanto ? '' : (erros[chave] || ''));
     });
 
-    // Filtro invalido: nada e enviado e a tabela continua como estava.
+    // Filtro inválido: nada é enviado e a tabela continua como estava.
     if (Object.keys(erros).length > 0) {
       return;
     }
 
-    // Mesmo pedido da ultima vez (ex.: Enter e depois sair do campo): nao repete.
+    // Mesmo pedido da última vez (ex.: Enter e depois sair do campo): não repete.
     const consulta = montarParametros(filtros).toString();
     if (consulta === ultimaConsulta) {
       return;
@@ -419,29 +361,25 @@
     ultimaConsulta = consulta;
 
     const numero = ++requisicaoAtual;
-    const resposta = await chamarApi('/demandas?' + consulta);
+    const resposta = await chamarApi('GET', '/demandas?' + consulta);
 
-    // Se o usuario mudou um filtro enquanto esta resposta vinha, ela ja e antiga.
+    // Se o usuário mudou um filtro enquanto esta resposta vinha, ela já é antiga.
     if (numero !== requisicaoAtual) {
       return;
     }
 
     if (!resposta.ok) {
       ultimaConsulta = null; // permite tentar de novo o mesmo pedido
-      mostrarAviso(resposta.mensagem);
+      mostrarAviso(resposta.erro);
       return;
     }
     mostrarAviso('');
 
     const demandas = resposta.dados.demandas;
 
-    // Sem filtros, a lista e "tudo que o usuario enxerga": serve de base para
-    // o total e para os selects de projeto e de responsavel.
+    // Sem filtros, a lista é "tudo que o usuário enxerga": serve de base para o total.
     if (!haFiltroAtivo(filtros)) {
       totalGeral = demandas.length;
-      if (idsProjetos === null) {
-        montarOpcoesDaLista(demandas);
-      }
     }
 
     mostrarTabela(demandas);
@@ -450,7 +388,7 @@
 
 
   /* ===================================================================
-   * 8. INICIALIZACAO
+   * 8. INICIALIZAÇÃO
    * =================================================================== */
 
   /* Volta todos os filtros ao estado inicial e recarrega a lista. */
@@ -466,28 +404,31 @@
     campos.busca.focus();
   }
 
-  function iniciar() {
-    Object.keys(IDS).forEach(function (chave) {
-      campos[chave] = document.getElementById(IDS[chave]);
-    });
-    // Sem os campos esperados a tela nao tem o que controlar.
-    if (Object.keys(campos).some(function (chave) { return !campos[chave]; })) {
-      console.error('listagem.js: algum campo de filtro nao foi encontrado em listagem.html.');
+  async function iniciar() {
+    // Sem login, usuarioLogado() já manda para a tela de login.
+    usuario = usuarioLogado();
+    if (!usuario) {
       return;
     }
 
-    usuario = usuarioLogado();
-
-    // O botao "Nova demanda" so aparece para quem pode criar demandas.
-    const botaoNova = document.getElementById('botao-nova-demanda');
-    if (botaoNova && podeCriarDemanda(usuario)) {
-      botaoNova.classList.remove('oculto');
+    Object.keys(IDS).forEach(function (chave) {
+      campos[chave] = document.getElementById(IDS[chave]);
+    });
+    // Sem os campos esperados a tela não tem o que controlar.
+    if (Object.keys(campos).some(function (chave) { return !campos[chave]; })) {
+      console.error('listagem.js: algum campo de filtro não foi encontrado em listagem.html.');
+      return;
     }
 
-    // O Administrador ve tudo; os demais, so os projetos a que estao vinculados.
-    const subtitulo = document.getElementById('subtitulo-listagem');
-    if (subtitulo && usuario.perfil !== PERFIS.ADMIN) {
-      subtitulo.textContent = 'Demandas dos projetos aos quais você está vinculado';
+    // O botão "Nova demanda" só aparece para quem pode criar demandas.
+    if (podeCriarDemanda(usuario)) {
+      document.getElementById('botao-nova-demanda').classList.remove('oculto');
+    }
+
+    // O Administrador vê tudo; os demais, só os projetos a que estão vinculados.
+    if (usuario.perfil !== PERFIS.ADMIN) {
+      document.getElementById('subtitulo-listagem').textContent =
+        'Demandas dos projetos aos quais você está vinculado';
     }
 
     montarSelect(campos.status, 'Todos', opcoesDeTextos(OPCOES.status));
@@ -527,6 +468,7 @@
 
     document.getElementById('botao-limpar').addEventListener('click', limparFiltros);
 
+    await carregarOpcoesDaApi();
     carregar(false);
   }
 
